@@ -21,14 +21,23 @@ import com.bandtrack.ui.viewmodels.PerformanceUiState
 import com.bandtrack.ui.viewmodels.PerformanceViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.ui.platform.LocalContext
+import com.bandtrack.data.repository.PerformanceRepository
+import com.bandtrack.data.repository.SongRepository
+import com.bandtrack.ui.viewmodels.PerformanceViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerformanceScreen(
     groupId: String,
     userId: String,
-    viewModel: PerformanceViewModel = viewModel()
+    performanceRepository: PerformanceRepository,
+    songRepository: SongRepository,
+    onStartLiveMode: (String) -> Unit
 ) {
+    val viewModel: PerformanceViewModel = viewModel(
+        factory = PerformanceViewModelFactory(performanceRepository, songRepository)
+    )
     val uiState by viewModel.uiState.collectAsState()
     val songsCache by viewModel.songsCache.collectAsState()
     
@@ -168,7 +177,8 @@ fun PerformanceScreen(
                     viewModel.deletePerformance(groupId, performance.id)
                     selectedPerformance = null
                 },
-                onEditSetlist = { showSetlistEditor = true }
+                onEditSetlist = { showSetlistEditor = true },
+                onStartLive = { onStartLiveMode(performance.id) }
             )
         }
         
@@ -407,7 +417,8 @@ fun PerformanceDetailsDialog(
     songsCache: Map<String, Song>,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onEditSetlist: () -> Unit
+    onEditSetlist: () -> Unit,
+    onStartLive: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -422,6 +433,18 @@ fun PerformanceDetailsDialog(
                     Text(performance.notes)
                 }
                 
+                Button(
+                    onClick = onStartLive,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Icon(Icons.Default.PlayArrow, null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Lancer le Live Mode")
+                }
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),

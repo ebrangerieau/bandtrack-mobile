@@ -24,8 +24,8 @@ sealed class PerformanceUiState {
 }
 
 class PerformanceViewModel(
-    private val performanceRepository: PerformanceRepository = PerformanceRepository(),
-    private val songRepository: SongRepository = SongRepository()
+    private val performanceRepository: PerformanceRepository,
+    private val songRepository: SongRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PerformanceUiState>(PerformanceUiState.Loading)

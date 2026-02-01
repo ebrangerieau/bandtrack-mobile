@@ -51,6 +51,7 @@ fun BandTrackApp(
     val currentUser by authViewModel.currentUser.collectAsState()
     var selectedGroup by remember { mutableStateOf<Group?>(null) }
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
+    var livePerformanceId by remember { mutableStateOf<String?>(null) }
     
     // Initialisation DB Locale
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -66,6 +67,13 @@ fun BandTrackApp(
         com.bandtrack.data.repository.SuggestionRepository(
             context, 
             database.suggestionDao(), 
+            database.pendingActionDao()
+        ) 
+    }
+    val performanceRepository = remember { 
+        com.bandtrack.data.repository.PerformanceRepository(
+            context, 
+            database.performanceDao(), 
             database.pendingActionDao()
         ) 
     }
@@ -137,6 +145,22 @@ fun BandTrackApp(
                             }
                         )
                     }
+                    Screen.LiveMode -> {
+                        if (livePerformanceId != null && currentUser != null) {
+                            com.bandtrack.ui.performance.LiveModeScreen(
+                                performanceId = livePerformanceId!!,
+                                groupId = selectedGroup!!.id,
+                                performanceRepository = performanceRepository,
+                                songRepository = songRepository,
+                                onExit = { 
+                                    livePerformanceId = null
+                                    currentScreen = Screen.Home 
+                                }
+                            )
+                        } else {
+                            currentScreen = Screen.Home
+                        }
+                    }
                     else -> {
                         HomeScreen(
                             group = selectedGroup!!,
@@ -147,8 +171,13 @@ fun BandTrackApp(
                             onNavigateToProfile = {
                                 currentScreen = Screen.Profile
                             },
+                            onStartLiveMode = { performanceId ->
+                                livePerformanceId = performanceId
+                                currentScreen = Screen.LiveMode
+                            },
                             songRepository = songRepository,
-                            suggestionRepository = suggestionRepository
+                            suggestionRepository = suggestionRepository,
+                            performanceRepository = performanceRepository
                         )
                     }
                 }
@@ -163,7 +192,8 @@ enum class Screen {
     GroupSelector,
     Home,
     Profile,
-    Settings
+    Settings,
+    LiveMode
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -172,8 +202,10 @@ fun HomeScreen(
     group: Group,
     onChangeGroup: () -> Unit,
     onNavigateToProfile: () -> Unit,
+    onStartLiveMode: (String) -> Unit,
     songRepository: com.bandtrack.data.repository.SongRepository,
-    suggestionRepository: com.bandtrack.data.repository.SuggestionRepository
+    suggestionRepository: com.bandtrack.data.repository.SuggestionRepository,
+    performanceRepository: com.bandtrack.data.repository.PerformanceRepository
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val authViewModel: AuthViewModel = viewModel()
@@ -289,7 +321,10 @@ fun HomeScreen(
                         if (currentUser != null) {
                             com.bandtrack.ui.performance.PerformanceScreen(
                                 groupId = group.id,
-                                userId = currentUser!!.id
+                                userId = currentUser!!.id,
+                                performanceRepository = performanceRepository,
+                                songRepository = songRepository,
+                                onStartLiveMode = onStartLiveMode
                             )
                         }
                     }
