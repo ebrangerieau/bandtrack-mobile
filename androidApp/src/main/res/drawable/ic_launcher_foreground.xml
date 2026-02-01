@@ -1,0 +1,16 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Clé de sol en orange -->
+    <path
+        android:fillColor="#FF6E40"
+        android:pathData="M54,24C54,24 58,26 58,32C58,38 54,42 50,42C46,42 42,38 42,34C42,30 44,28 47,28C50,28 52,30 52,33C52,36 50,38 47,38C45,38 43,37 43,35M54,24L54,60C54,64 52,66 48,66C44,66 40,62 40,58C40,54 43,52 46,52C49,52 52,54 52,58"/>
+    
+    <!-- Checkmark en vert -->
+    <path
+        android:fillColor="#00E676"
+        android:pathData="M62,32L68,38L78,28L82,32L68,46L58,36Z"/>
+</vector>

@@ -1,0 +1,53 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Android
+*.apk
+*.aab
+*.ap_
+*.dex
+local.properties
+.idea/
+*.iml
+.DS_Store
+/captures
+.externalNativeBuild
+.cxx
+
+# Firebase
+google-services.json
+crashlytics-build.properties
+fabric.properties
+
+# Secrets
+.env
+*.keystore
+*.jks
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Shared module
+/shared/build/
+
+# AndroidApp module
+/androidApp/build/
+
+# Python (pour scripts d'exécution)
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.tmp/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~

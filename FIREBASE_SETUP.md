@@ -194,15 +194,19 @@ service cloud.firestore {
 
 ---
 
-## Étape 5 : Activer Cloud Messaging (Notifications Push)
+## Étape 5 : Cloud Messaging (Notifications Push) - OPTIONNEL
 
 ### 5.1 Configuration FCM
 
-1. Dans le menu de gauche, cliquez sur **"Cloud Messaging"**
-2. Les notifications push sont automatiquement activées avec le SDK
-3. Aucune configuration supplémentaire n'est nécessaire pour l'instant
+**Bonne nouvelle** : Firebase Cloud Messaging (FCM) est automatiquement activé lorsque vous ajoutez le fichier `google-services.json` à votre projet ! 
 
-> **Note** : Le token FCM sera géré dans le code de l'application.
+Vous n'avez **rien à configurer manuellement** dans la console Firebase pour l'instant. Les notifications push fonctionneront automatiquement une fois le code implémenté.
+
+> **Note** : Si vous souhaitez envoyer des notifications de test depuis la console :
+> 1. Dans le menu de gauche, cherchez **"Messaging"** dans la section **"Engage"** (ou **"Tous les produits"**)
+> 2. Vous pourrez envoyer des notifications manuellement une fois l'app installée sur un appareil
+
+Pour BandTrack, nous gérerons les notifications directement dans le code de l'application (rappels de concerts, invitations, etc.). Le token FCM sera géré automatiquement par le SDK.
 
 ---
 
@@ -274,21 +278,32 @@ firestore/
 
 ### 7.1 Debug SHA-1 (Développement)
 
-Ouvrez un terminal dans le répertoire de votre projet et exécutez :
+**IMPORTANT** : Exécutez ces commandes depuis le **répertoire racine du projet** `bandtrack-mobile\`
 
 **Windows (PowerShell)** :
 ```powershell
-cd android
-./gradlew signingReport
+# Assurez-vous d'être dans: d:\Développement\bandtrack-mobile\
+cd d:\Développement\bandtrack-mobile
+.\gradlew.bat signingReport
 ```
 
 **macOS/Linux** :
 ```bash
-cd android
+# Assurez-vous d'être dans le répertoire du projet
+cd /path/to/bandtrack-mobile
 ./gradlew signingReport
 ```
 
 Cherchez dans la sortie la section **`Variant: debug`** et copiez la valeur **SHA1**.
+
+Exemple de sortie :
+```
+Variant: debug
+Config: debug
+Store: C:\Users\VotreNom\.android\debug.keystore
+Alias: AndroidDebugKey
+SHA1: AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD
+```
 
 ### 7.2 Ajouter le SHA-1 à Firebase
 
