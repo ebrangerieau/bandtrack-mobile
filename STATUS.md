@@ -68,6 +68,8 @@
 - ✅ Ajout de la configuration d'instrument personnalisée (Tonalité, Capo...)
 - ✅ Affichage en **gras** de la config perso sur la fiche morceau
 - ✅ Ajout des notes personnelles (Mémos privés) par morceau
+- ✅ **Implémentation Profil Utilisateur** (Visualisation, Stats, Déconnexion)
+- ✅ **Implémentation Paramètres** (Gestion Thème Sombre/Clair)
 
 ## 📋 Prochaines Étapes Suggérées
 
@@ -98,8 +100,8 @@
 - [x] Tri des morceaux (Titre, Artiste, Maîtrise)
 - [x] Statistiques du groupe (Maîtrise globale, Tops/Flops)
 - [x] Interface améliorée avec Material 3
-- [ ] Profil utilisateur (Reporté)
-- [ ] Paramètres de l'application (Reporté)
+- [x] Profil utilisateur (Complet : Avatar, Stats, Logout)
+- [x] Paramètres de l'application (Thème Sombre/Clair, Version)
 
 **Technologies** : SearchBar, Sort Logic, Data Visualization (Basic Cards)
 

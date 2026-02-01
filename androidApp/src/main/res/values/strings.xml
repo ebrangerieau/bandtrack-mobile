@@ -50,4 +50,7 @@
     <string name="error_network">Erreur réseau</string>
     <string name="error_auth">Erreur d\'authentification</string>
     <string name="error_generic">Une erreur est survenue</string>
+
+    <!-- Notifications -->
+    <string name="default_notification_channel_id">fcm_default_channel</string>
 </resources>

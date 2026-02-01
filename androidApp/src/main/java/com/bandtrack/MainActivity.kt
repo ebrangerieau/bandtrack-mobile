@@ -17,6 +17,7 @@ import com.bandtrack.ui.auth.AuthViewModel
 import com.bandtrack.ui.auth.LoginScreen
 import com.bandtrack.ui.auth.RegisterScreen
 import com.bandtrack.ui.groups.GroupSelectorScreen
+import com.bandtrack.ui.profile.ProfileScreen
 import com.bandtrack.ui.theme.BandTrackTheme
 
 /**
@@ -26,8 +27,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            BandTrackTheme {
-                BandTrackApp()
+            var isDarkTheme by remember { mutableStateOf(false) } // Default light, or system check
+            // Use system default initially
+            val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+            LaunchedEffect(Unit) { isDarkTheme = systemDark }
+
+            BandTrackTheme(darkTheme = isDarkTheme) {
+                BandTrackApp(
+                    isDarkTheme = isDarkTheme,
+                    onThemeChange = { isDarkTheme = it }
+                )
             }
         }
     }
@@ -35,7 +44,9 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun BandTrackApp(
-    authViewModel: AuthViewModel = viewModel()
+    authViewModel: AuthViewModel = viewModel(),
+    isDarkTheme: Boolean = false,
+    onThemeChange: (Boolean) -> Unit = {}
 ) {
     val currentUser by authViewModel.currentUser.collectAsState()
     var selectedGroup by remember { mutableStateOf<Group?>(null) }
@@ -96,18 +107,38 @@ fun BandTrackApp(
             }
             // Si connecté et groupe sélectionné
             else -> {
-                HomeScreen(
-                    group = selectedGroup!!,
-                    onChangeGroup = {
-                        selectedGroup = null
-                        currentScreen = Screen.GroupSelector
-                    },
-                    onLogout = {
-                        authViewModel.signOut()
-                        selectedGroup = null
-                        currentScreen = Screen.Login
+                when (currentScreen) {
+                    Screen.Settings -> {
+                        com.bandtrack.ui.settings.SettingsScreen(
+                            isDarkTheme = isDarkTheme,
+                            onThemeChange = onThemeChange,
+                            onNavigateBack = { currentScreen = Screen.Profile }
+                        )
                     }
-                )
+                    Screen.Profile -> {
+                         com.bandtrack.ui.profile.ProfileScreen(
+                            onNavigateBack = { currentScreen = Screen.Home },
+                            onNavigateToSettings = { currentScreen = Screen.Settings },
+                            onLogout = {
+                                authViewModel.signOut()
+                                selectedGroup = null
+                                currentScreen = Screen.Login
+                            }
+                        )
+                    }
+                    else -> {
+                        HomeScreen(
+                            group = selectedGroup!!,
+                            onChangeGroup = {
+                                selectedGroup = null
+                                currentScreen = Screen.GroupSelector
+                            },
+                            onNavigateToProfile = {
+                                currentScreen = Screen.Profile
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -117,7 +148,9 @@ enum class Screen {
     Login,
     Register,
     GroupSelector,
-    Home
+    Home,
+    Profile,
+    Settings
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +158,7 @@ enum class Screen {
 fun HomeScreen(
     group: Group,
     onChangeGroup: () -> Unit,
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val authViewModel: AuthViewModel = viewModel()
@@ -178,8 +211,8 @@ fun HomeScreen(
                         IconButton(onClick = onChangeGroup) {
                             Icon(Icons.Default.SwapHoriz, contentDescription = "Changer de groupe")
                         }
-                        IconButton(onClick = onLogout) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = "Déconnexion")
+                        IconButton(onClick = onNavigateToProfile) {
+                            Icon(Icons.Default.Person, contentDescription = "Mon Profil")
                         }
                     }
                 )
