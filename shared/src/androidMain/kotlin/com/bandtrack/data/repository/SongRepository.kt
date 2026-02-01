@@ -146,6 +146,46 @@ open class SongRepository {
     }
 
     /**
+     * Mettre à jour la configuration d'instrument personnelle
+     */
+    suspend fun updateMemberConfig(
+        groupId: String,
+        songId: String,
+        userId: String,
+        config: String
+    ): Result<Unit> = try {
+        db.collection("groups")
+            .document(groupId)
+            .collection("songs")
+            .document(songId)
+            .update("memberInstrumentConfigs.$userId", config)
+            .await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
+     * Mettre à jour les notes personnelles
+     */
+    suspend fun updateMemberNotes(
+        groupId: String,
+        songId: String,
+        userId: String,
+        notes: String
+    ): Result<Unit> = try {
+        db.collection("groups")
+            .document(groupId)
+            .collection("songs")
+            .document(songId)
+            .update("memberPersonalNotes.$userId", notes)
+            .await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
      * Mettre à jour les informations d'un morceau
      */
     suspend fun updateSong(

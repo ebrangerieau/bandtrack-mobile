@@ -22,7 +22,15 @@ data class Song(
     val addedAt: Long = 0L,
     val convertedFromSuggestionId: String? = null, // ID de la suggestion d'origine
     val link: String? = null, // Lien vers ressource externe
-    val hasAudioNotes: Boolean = false // Indique si des notes audio existent localement
+    val hasAudioNotes: Boolean = false, // Indique si des notes audio existent localement
+    
+    // Configuration spécifique par utilisateur (ex: "Harmo C", "Capo 2")
+    // Map<UserId, String>
+    val memberInstrumentConfigs: Map<String, String> = emptyMap(),
+    
+    // Notes textuelles personnelles (ex: "Attention au break de fin")
+    // Map<UserId, String>
+    val memberPersonalNotes: Map<String, String> = emptyMap()
 ) {
     companion object {
         fun empty() = Song()

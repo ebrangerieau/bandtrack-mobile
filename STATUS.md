@@ -61,10 +61,12 @@
 - ✅ Build réussi - APK généré avec succès
 
 ### ✅ Runtime - RÉSOLU
-- ✅ Correction `PERMISSION_DENIED` sur l'écran Groupes
 - ✅ Correction conflit getters `getRole` sur `GroupMember` (renommé en `toRoleEnum`)
 - ✅ Optimisation des requêtes Firestore (ajout `memberIds` au modèle Group)
 - ✅ Création du fichier `firestore.rules` optimisé
+- ✅ Ajout de la configuration d'instrument personnalisée (Tonalité, Capo...)
+- ✅ Affichage en **gras** de la config perso sur la fiche morceau
+- ✅ Ajout des notes personnelles (Mémos privés) par morceau
 
 ## 📋 Prochaines Étapes Suggérées
 

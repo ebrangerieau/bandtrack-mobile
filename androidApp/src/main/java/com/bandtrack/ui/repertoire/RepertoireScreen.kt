@@ -1,6 +1,7 @@
 package com.bandtrack.ui.repertoire
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import com.bandtrack.ui.repertoire.SortOption
@@ -15,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bandtrack.data.models.Song
 import kotlin.math.roundToInt
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -151,6 +154,8 @@ fun RepertoireScreen(
                                 songs = state.songs,
                                 currentUserId = userId,
                                 onMasteryChange = viewModel::updateMyMasteryLevel,
+                                onUpdatePersonalConfig = viewModel::updatePersonalConfig,
+                                onUpdatePersonalNotes = viewModel::updatePersonalNotes,
                                 onNavigateToAudioNotes = onNavigateToAudioNotes,
                                 onDelete = viewModel::deleteSong
                             )
@@ -198,6 +203,8 @@ fun SongsList(
     songs: List<Song>,
     currentUserId: String,
     onMasteryChange: (String, Int) -> Unit,
+    onUpdatePersonalConfig: (String, String) -> Unit,
+    onUpdatePersonalNotes: (String, String) -> Unit,
     onNavigateToAudioNotes: (String) -> Unit,
     onDelete: (String) -> Unit
 ) {
@@ -211,6 +218,8 @@ fun SongsList(
                 song = song,
                 currentUserId = currentUserId,
                 onMasteryChange = { level -> onMasteryChange(song.id, level) },
+                onUpdatePersonalConfig = { config -> onUpdatePersonalConfig(song.id, config) },
+                onUpdatePersonalNotes = { notes -> onUpdatePersonalNotes(song.id, notes) },
                 onNavigateToAudioNotes = { onNavigateToAudioNotes(song.id) },
                 onDelete = { onDelete(song.id) }
             )
@@ -223,6 +232,8 @@ fun SongCard(
     song: Song,
     currentUserId: String,
     onMasteryChange: (Int) -> Unit,
+    onUpdatePersonalConfig: (String) -> Unit,
+    onUpdatePersonalNotes: (String) -> Unit,
     onNavigateToAudioNotes: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -275,6 +286,17 @@ fun SongCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    val personalConfig = song.memberInstrumentConfigs[currentUserId]
+                    if (!personalConfig.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "👉 $personalConfig",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
                 
                 IconButton(onClick = { showMenu = true }) {
@@ -392,6 +414,9 @@ fun SongCard(
     if (showDetailsDialog) {
         SongDetailsDialog(
             song = song,
+            currentUserId = currentUserId,
+            onUpdatePersonalConfig = onUpdatePersonalConfig,
+            onUpdatePersonalNotes = onUpdatePersonalNotes,
             onDismiss = { showDetailsDialog = false }
         )
     }
@@ -583,28 +608,84 @@ fun AddSongDialog(
 @Composable
 fun SongDetailsDialog(
     song: Song,
+    currentUserId: String,
+    onUpdatePersonalConfig: (String) -> Unit,
+    onUpdatePersonalNotes: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var personalConfig by remember { mutableStateOf(song.memberInstrumentConfigs[currentUserId] ?: "") }
+    var personalNotes by remember { mutableStateOf(song.memberPersonalNotes[currentUserId] ?: "") }
+    var hasChanges by remember(personalConfig, personalNotes) {
+        mutableStateOf(
+            personalConfig != (song.memberInstrumentConfigs[currentUserId] ?: "") ||
+            personalNotes != (song.memberPersonalNotes[currentUserId] ?: "")
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(song.title) },
         text = {
-            Column {
-                DetailRow("Artiste", song.artist)
-                if (song.structure.isNotBlank()) {
-                    DetailRow("Structure", song.structure)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                // Infos générales (Lecture seule)
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    DetailRow("Artiste", song.artist)
+                    if (song.structure.isNotBlank()) DetailRow("Structure", song.structure)
+                    song.key?.let { DetailRow("Tonalité (Globale)", it) }
+                    song.tempo?.let { DetailRow("Tempo", "$it BPM") }
+                    DetailRow("Maîtrise Groupe", String.format("%.1f/10", song.getAverageMasteryLevel()))
                 }
-                song.key?.let { DetailRow("Tonalité", it) }
-                song.tempo?.let { DetailRow("Tempo", "$it BPM") }
-                if (song.notes.isNotBlank()) {
-                    DetailRow("Notes", song.notes)
-                }
-                DetailRow("Maîtrise moyenne", String.format("%.1f/10", song.getAverageMasteryLevel()))
+                
+                HorizontalDivider()
+
+                // Section Personnelle
+                Text(
+                    text = "Ma Configuration 🎵",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                OutlinedTextField(
+                    value = personalConfig,
+                    onValueChange = { personalConfig = it },
+                    label = { Text("Mon Instrument / Clé") },
+                    placeholder = { Text("Ex: Harmo G, Capo 2...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = personalNotes,
+                    onValueChange = { personalNotes = it },
+                    label = { Text("Mes Notes") },
+                    placeholder = { Text("Notes personnelles pour ce morceau...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Fermer")
+            Button(
+                onClick = {
+                    if (hasChanges) {
+                        onUpdatePersonalConfig(personalConfig)
+                        onUpdatePersonalNotes(personalNotes)
+                    }
+                    onDismiss()
+                }
+            ) {
+                Text(if (hasChanges) "Enregistrer" else "Fermer")
+            }
+        },
+        dismissButton = {
+            if (hasChanges) {
+                TextButton(onClick = onDismiss) {
+                    Text("Annuler")
+                }
             }
         }
     )

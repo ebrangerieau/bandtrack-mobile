@@ -162,6 +162,46 @@ class RepertoireViewModel(
     }
 
     /**
+     * Mettre à jour la configuration d'instrument personnelle
+     */
+    fun updatePersonalConfig(songId: String, config: String) {
+        viewModelScope.launch {
+            val result = songRepository.updateMemberConfig(
+                groupId = currentGroupId,
+                songId = songId,
+                userId = currentUserId,
+                config = config
+            )
+
+            if (result.isFailure) {
+                _uiState.value = RepertoireUiState.Error(
+                    result.exceptionOrNull()?.message ?: "Erreur lors de la mise à jour de la config"
+                )
+            }
+        }
+    }
+
+    /**
+     * Mettre à jour les notes personnelles
+     */
+    fun updatePersonalNotes(songId: String, notes: String) {
+        viewModelScope.launch {
+            val result = songRepository.updateMemberNotes(
+                groupId = currentGroupId,
+                songId = songId,
+                userId = currentUserId,
+                notes = notes
+            )
+
+            if (result.isFailure) {
+                _uiState.value = RepertoireUiState.Error(
+                    result.exceptionOrNull()?.message ?: "Erreur lors de la mise à jour des notes"
+                )
+            }
+        }
+    }
+
+    /**
      * Mettre à jour les informations d'un morceau
      */
     fun updateSong(songId: String, updates: Map<String, Any>) {
