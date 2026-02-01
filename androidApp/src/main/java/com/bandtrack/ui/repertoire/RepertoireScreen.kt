@@ -30,6 +30,7 @@ fun RepertoireScreen(
     
     var showAddDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
+    var showStats by remember { mutableStateOf(false) }
 
     LaunchedEffect(groupId) {
         viewModel.initialize(groupId, userId)
@@ -40,6 +41,9 @@ fun RepertoireScreen(
             TopAppBar(
                 title = { Text("Répertoire") },
                 actions = {
+                    IconButton(onClick = { showStats = true }) {
+                        Icon(Icons.Default.Star, contentDescription = "Statistiques")
+                    }
                     IconButton(onClick = { showSortMenu = true }) {
                         Icon(Icons.Default.Sort, contentDescription = "Trier")
                     }
@@ -178,6 +182,13 @@ fun RepertoireScreen(
                 )
                 showAddDialog = false
             }
+        )
+    }
+    
+    if (showStats) {
+        com.bandtrack.ui.stats.StatsScreen(
+            groupId = groupId,
+            onDismiss = { showStats = false }
         )
     }
 }

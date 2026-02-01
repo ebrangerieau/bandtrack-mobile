@@ -84,16 +84,15 @@
 
 **Technologies** : Firestore, DatePicker, TabRow, Custom Setlist Editor
 
-### Option C : Phase 5 - Améliorations UX 🎨
-**Complexité** : Faible  
-**Durée estimée** : 2-3h
+### Phase 5 : Améliorations UX 🎨 ✅ (Terminé 2026-02-01)
+- [x] Recherche/filtrage dans le répertoire (Titre, Artiste)
+- [x] Tri des morceaux (Titre, Artiste, Maîtrise)
+- [x] Statistiques du groupe (Maîtrise globale, Tops/Flops)
+- [x] Interface améliorée avec Material 3
+- [ ] Profil utilisateur (Reporté)
+- [ ] Paramètres de l'application (Reporté)
 
-- [ ] Recherche/filtrage dans le répertoire
-- [ ] Tri des morceaux (titre, artiste, maîtrise)
-- [ ] Statistiques du groupe
-- [ ] Profil utilisateur
-- [ ] Paramètres de l'application
-- [ ] Mode sombre/clair
+**Technologies** : SearchBar, Sort Logic, Data Visualization (Basic Cards)
 
 ### Option D : Tests & Documentation 📝
 **Complexité** : Faible-Moyenne  

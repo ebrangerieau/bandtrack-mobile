@@ -68,8 +68,8 @@ class RepertoireViewModel(
                 val sorted = when (sort) {
                     SortOption.TITLE -> filtered.sortedBy { it.title }
                     SortOption.ARTIST -> filtered.sortedBy { it.artist }
-                    SortOption.MASTERY_ASC -> filtered.sortedBy { it.getMasteryAverage() }
-                    SortOption.MASTERY_DESC -> filtered.sortedByDescending { it.getMasteryAverage() }
+                    SortOption.MASTERY_ASC -> filtered.sortedBy { it.getAverageMasteryLevel() }
+                    SortOption.MASTERY_DESC -> filtered.sortedByDescending { it.getAverageMasteryLevel() }
                 }
 
                 _uiState.value = RepertoireUiState.Success(sorted)
