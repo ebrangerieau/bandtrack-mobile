@@ -14,8 +14,24 @@ import kotlinx.coroutines.tasks.await
 /**
  * Repository pour la gestion du répertoire de morceaux
  */
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import com.bandtrack.data.local.PendingActionDao
+import com.bandtrack.data.local.PendingActionEntity
+import com.bandtrack.workers.SyncWorker
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.util.UUID
+
+/**
+ * Repository pour la gestion du répertoire de morceaux
+ */
 open class SongRepository(
-    private val songDao: com.bandtrack.data.local.SongDao? = null
+    private val context: android.content.Context? = null,
+    private val songDao: com.bandtrack.data.local.SongDao? = null,
+    private val pendingActionDao: PendingActionDao? = null
 ) {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -28,20 +44,50 @@ open class SongRepository(
         song: Song,
         userId: String
     ): Result<String> = try {
-        val docRef = db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document()
-        
-        val songWithId = song.copy(
-            id = docRef.id,
-            groupId = groupId,
-            addedBy = userId
-        )
-        
-        docRef.set(songWithId).await()
-        
-        Result.success(docRef.id)
+        // Mode Offline-First
+        if (songDao != null && pendingActionDao != null && context != null) {
+             val newId = UUID.randomUUID().toString()
+             val songWithId = song.copy(
+                id = newId,
+                groupId = groupId,
+                addedBy = userId
+            )
+            
+            // 1. Sauvegarde Locale
+            songDao.insertSong(songWithId.toEntity())
+            
+            // 2. Ajouter à la file d'attente
+            val action = PendingActionEntity(
+                actionType = "CREATE",
+                entityType = "SONG",
+                entityId = newId,
+                parentId = groupId,
+                payload = Json.encodeToString(songWithId),
+                createdAt = System.currentTimeMillis()
+            )
+            pendingActionDao.insert(action)
+            
+            // 3. Déclencher la synchro
+            enqueueSync()
+            
+            Result.success(newId)
+        } else {
+            // Fallback Online-Only (Legacy)
+            val docRef = db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document()
+            
+            val songWithId = song.copy(
+                id = docRef.id,
+                groupId = groupId,
+                addedBy = userId
+            )
+            
+            docRef.set(songWithId).await()
+            
+            Result.success(docRef.id)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -245,14 +291,51 @@ open class SongRepository(
         songId: String,
         updates: Map<String, Any>
     ): Result<Unit> = try {
-        db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-            .update(updates)
-            .await()
-        
-        Result.success(Unit)
+         // Note: Partial updates are tricky offline because we need the full object to serialize it for the worker
+         // For now, we will fetch the song locally, apply updates, and treat it as a full UPDATE
+         if (songDao != null && pendingActionDao != null && context != null) {
+            // 1. Get current local song
+            val currentEntity = songDao.getSongById(songId)
+            if (currentEntity != null) {
+                // Apply updates (Simplification: we assume we can re-construct the object)
+                // Actually, updates Map is hard to map to Entity.
+                // LIMITATION: For offline mode, complex partial updates are hard.
+                // We will try to fetch the song from DB, update fields, save back.
+                // OR: We check if the update is simple.
+                
+                // CRITICAL FIX: The current architecture makes partial updates hard with JSON payload.
+                // We will defer to Online-Only for 'updates' map if complex, OR
+                // ideally, the UI should provide the full modified Song object, not a Map.
+                
+                // For now, let's keep the Online-Only implementation for this generic 'updateSong' 
+                // but if we had 'updateSong(song: Song)' it would be easier.
+                
+                // Let's implement a BEST EFFORT online-first for this generic method
+                 db.collection("groups")
+                    .document(groupId)
+                    .collection("songs")
+                    .document(songId)
+                    .update(updates)
+                    .await()
+            } else {
+                 db.collection("groups")
+                    .document(groupId)
+                    .collection("songs")
+                    .document(songId)
+                    .update(updates)
+                    .await()
+            }
+             Result.success(Unit)
+         } else {
+            db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
+                .update(updates)
+                .await()
+            
+            Result.success(Unit)
+         }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -264,15 +347,43 @@ open class SongRepository(
         groupId: String,
         songId: String
     ): Result<Unit> = try {
-        db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-            .delete()
-            .await()
-        
-        Result.success(Unit)
+        if (songDao != null && pendingActionDao != null && context != null) {
+            // 1. Delete Local
+            songDao.deleteSong(songId)
+            
+            // 2. Queue Action
+             val action = PendingActionEntity(
+                actionType = "DELETE",
+                entityType = "SONG",
+                entityId = songId,
+                parentId = groupId,
+                payload = "", // No payload needed for delete usually, but we forced non-null string
+                createdAt = System.currentTimeMillis()
+            )
+            pendingActionDao.insert(action)
+            
+            // 3. Sync
+            enqueueSync()
+            
+            Result.success(Unit)
+        } else {
+            db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
+                .delete()
+                .await()
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    private fun enqueueSync() {
+        context?.let { ctx ->
+            val workRequest = OneTimeWorkRequest.Builder(SyncWorker::class.java)
+                .build()
+            WorkManager.getInstance(ctx).enqueue(workRequest)
+        }
     }
 }

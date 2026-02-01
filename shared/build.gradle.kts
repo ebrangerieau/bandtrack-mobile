@@ -52,6 +52,9 @@ kotlin {
                 implementation("com.google.firebase:firebase-auth-ktx")
                 implementation("com.google.firebase:firebase-firestore-ktx")
                 implementation("com.google.firebase:firebase-messaging-ktx")
+
+                // WorkManager
+                implementation("androidx.work:work-runtime-ktx:2.9.0")
             }
         }
 

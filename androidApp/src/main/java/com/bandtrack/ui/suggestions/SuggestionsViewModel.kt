@@ -1,6 +1,7 @@
 package com.bandtrack.ui.suggestions
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.bandtrack.data.models.Suggestion
 import com.bandtrack.data.repository.SuggestionRepository
@@ -153,5 +154,19 @@ class SuggestionsViewModel(
                 )
             }
         }
+    }
+}
+
+class SuggestionsViewModelFactory(
+    private val songRepository: SongRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SuggestionsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return SuggestionsViewModel(
+                songRepository = songRepository
+            ) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

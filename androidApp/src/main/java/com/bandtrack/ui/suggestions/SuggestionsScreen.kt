@@ -13,6 +13,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bandtrack.data.models.Suggestion
+import com.bandtrack.data.repository.SongRepository
+import com.bandtrack.ui.suggestions.SuggestionsViewModelFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -20,8 +22,11 @@ fun SuggestionsScreen(
     groupId: String,
     userId: String,
     userName: String,
-    viewModel: SuggestionsViewModel = viewModel()
+    songRepository: SongRepository
 ) {
+    val viewModel: SuggestionsViewModel = viewModel(
+        factory = SuggestionsViewModelFactory(songRepository)
+    )
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 

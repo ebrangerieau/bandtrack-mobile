@@ -55,9 +55,13 @@ fun BandTrackApp(
     // Initialisation DB Locale
     val context = androidx.compose.ui.platform.LocalContext.current
     val database = remember { com.bandtrack.data.local.AppDatabase.getDatabase(context) }
-    
-    // Injection manuelle du DAO dans le Repository (via factory ou setter plus tard)
-    // Pour l'instant, on laisse le repository se débrouiller ou on le passe
+    val songRepository = remember { 
+        com.bandtrack.data.repository.SongRepository(
+            context, 
+            database.songDao(), 
+            database.pendingActionDao()
+        ) 
+    }
 
 
     Surface(
@@ -135,7 +139,8 @@ fun BandTrackApp(
                             },
                             onNavigateToProfile = {
                                 currentScreen = Screen.Profile
-                            }
+                            },
+                            songRepository = songRepository
                         )
                     }
                 }
@@ -158,7 +163,8 @@ enum class Screen {
 fun HomeScreen(
     group: Group,
     onChangeGroup: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    songRepository: com.bandtrack.data.repository.SongRepository
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val authViewModel: AuthViewModel = viewModel()
@@ -251,7 +257,8 @@ fun HomeScreen(
                             com.bandtrack.ui.suggestions.SuggestionsScreen(
                                 groupId = group.id,
                                 userId = currentUser!!.id,
-                                userName = currentUser!!.displayName
+                                userName = currentUser!!.displayName,
+                                songRepository = songRepository
                             )
                         }
                     }
@@ -260,6 +267,7 @@ fun HomeScreen(
                             com.bandtrack.ui.repertoire.RepertoireScreen(
                                 groupId = group.id,
                                 userId = currentUser!!.id,
+                                songRepository = songRepository,
                                 onNavigateToAudioNotes = { songId ->
                                     selectedSongId = songId
                                     selectedSongTitle = "Morceau" 

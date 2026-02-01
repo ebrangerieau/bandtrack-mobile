@@ -1,0 +1,72 @@
+package com.bandtrack.workers
+
+import android.content.Context
+import android.util.Log
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.bandtrack.data.local.AppDatabase
+import com.bandtrack.data.models.Song
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.json.Json
+
+class SyncWorker(
+    appContext: Context,
+    workerParams: WorkerParameters
+) : CoroutineWorker(appContext, workerParams) {
+
+    private val db = FirebaseFirestore.getInstance()
+    private val pendingActionDao = AppDatabase.getDatabase(appContext).pendingActionDao()
+
+    override suspend fun doWork(): Result {
+        return try {
+            val actions = pendingActionDao.getAll()
+            if (actions.isEmpty()) {
+                return Result.success()
+            }
+
+            Log.d(TAG, "Syncing ${actions.size} pending actions")
+
+            for (action in actions) {
+                processAction(action)
+                // Remove from queue after success
+                pendingActionDao.delete(action)
+            }
+
+            Result.success()
+        } catch (e: Exception) {
+            Log.e(TAG, "Sync failed", e)
+            if (runAttemptCount < 3) {
+                Result.retry()
+            } else {
+                Result.failure()
+            }
+        }
+    }
+
+    private suspend fun processAction(action: com.bandtrack.data.local.PendingActionEntity) {
+        when (action.entityType) {
+            "SONG" -> processSongAction(action)
+            // Add other entities here
+        }
+    }
+
+    private suspend fun processSongAction(action: com.bandtrack.data.local.PendingActionEntity) {
+        val groupId = action.parentId ?: throw IllegalStateException("Song action must have parentId (groupId)")
+        val collectionRef = db.collection("groups").document(groupId).collection("songs")
+
+        when (action.actionType) {
+            "CREATE", "UPDATE" -> {
+                 val song = Json.decodeFromString<Song>(action.payload)
+                 collectionRef.document(action.entityId).set(song).await()
+            }
+            "DELETE" -> {
+                collectionRef.document(action.entityId).delete().await()
+            }
+        }
+    }
+
+    companion object {
+        private const val TAG = "SyncWorker"
+    }
+}

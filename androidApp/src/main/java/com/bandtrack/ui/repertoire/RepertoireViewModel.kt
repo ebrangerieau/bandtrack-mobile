@@ -1,6 +1,7 @@
 package com.bandtrack.ui.repertoire
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.bandtrack.data.models.Song
 import com.bandtrack.data.repository.SongRepository
@@ -253,4 +254,14 @@ class RepertoireViewModel(
 
 enum class SortOption {
     TITLE, ARTIST, MASTERY_ASC, MASTERY_DESC
+}
+
+class RepertoireViewModelFactory(private val repository: SongRepository) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(RepertoireViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return RepertoireViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
 }

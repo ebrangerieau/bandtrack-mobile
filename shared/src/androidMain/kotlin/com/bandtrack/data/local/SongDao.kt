@@ -11,6 +11,12 @@ import kotlinx.coroutines.flow.Flow
 interface SongDao {
     @Query("SELECT * FROM songs WHERE groupId = :groupId ORDER BY title ASC")
     fun getSongsByGroup(groupId: String): Flow<List<SongEntity>>
+    
+    @Query("SELECT * FROM songs WHERE id = :songId")
+    suspend fun getSongById(songId: String): SongEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertSong(song: SongEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSongs(songs: List<SongEntity>)

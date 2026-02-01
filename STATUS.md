@@ -69,7 +69,9 @@
 - ✅ Affichage en **gras** de la config perso sur la fiche morceau
 - ✅ Ajout des notes personnelles (Mémos privés) par morceau
 - ✅ **Implémentation Profil Utilisateur** (Visualisation, Stats, Déconnexion)
+
 - ✅ **Implémentation Paramètres** (Gestion Thème Sombre/Clair)
+- ✅ **Notifications Push** (Service Firebase, Permissions, Canal de notification)
 
 ## 📋 Prochaines Étapes Suggérées
 
@@ -91,7 +93,8 @@
 - [x] UI Ajout/Suppression d'événement
 - [x] Gestion des Setlists (Sélection de morceaux pour un événement)
 - [x] Éditeur de Setlist (Drag & Drop simplifié, Suppression)
-- [ ] Notifications push (reporté à plus tard)
+
+- [x] Notifications push (Service MyFirebaseMessagingService)
 
 **Technologies** : Firestore, DatePicker, TabRow, Custom Setlist Editor
 

@@ -6,10 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [SongEntity::class], version = 1, exportSchema = false)
+@Database(entities = [SongEntity::class, PendingActionEntity::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
+    abstract fun pendingActionDao(): PendingActionDao
 
     companion object {
         @Volatile

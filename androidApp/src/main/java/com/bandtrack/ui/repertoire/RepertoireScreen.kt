@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bandtrack.data.models.Song
+import com.bandtrack.data.repository.SongRepository
 import kotlin.math.roundToInt
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,9 +25,12 @@ import androidx.compose.foundation.verticalScroll
 fun RepertoireScreen(
     groupId: String,
     userId: String,
-    viewModel: RepertoireViewModel = viewModel(),
+    songRepository: SongRepository,
     onNavigateToAudioNotes: (String) -> Unit
 ) {
+    val viewModel: RepertoireViewModel = viewModel(
+        factory = RepertoireViewModelFactory(songRepository)
+    )
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
