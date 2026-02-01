@@ -97,20 +97,22 @@ class SongRepository {
     /**
      * Récupérer un morceau par ID
      */
-    suspend fun getSong(groupId: String, songId: String): Result<Song> = try {
-        val snapshot = db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-            .get()
-            .await()
-        
-        val song = snapshot.toObject(Song::class.java)
-            ?: return Result.failure(Exception("Song not found"))
-        
-        Result.success(song)
-    } catch (e: Exception) {
-        Result.failure(e)
+    suspend fun getSong(groupId: String, songId: String): Result<Song> {
+        return try {
+            val snapshot = db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
+                .get()
+                .await()
+            
+            val song = snapshot.toObject(Song::class.java)
+                ?: return Result.failure(Exception("Song not found"))
+            
+            Result.success(song)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     /**

@@ -1,0 +1,55 @@
+Initialized native services in: C:\Users\ebrangerieau\.gradle\native
+Initialized jansi services in: C:\Users\ebrangerieau\.gradle\native
+The client will now receive all logging from the daemon (pid: 16172). The daemon log file: C:\Users\ebrangerieau\.gradle\daemon\8.13\daemon-16172.out.log
+Starting 12th build in daemon [uptime: 48 mins 1.723 secs, performance: 100%, GC rate: 0.00/s, heap usage: 0% of 2 GiB]
+Using 8 worker leases.
+Configuration on demand is an incubating feature.
+Now considering [D:\D├®veloppement\bandtrack-mobile] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file 'D:\D├®veloppement\bandtrack-mobile\settings.gradle.kts'.
+Using local directory build cache for the root build (location = C:\Users\ebrangerieau\.gradle\caches\build-cache-1, remove unused entries = after 7 days).
+Projects loaded. Root project using build file 'D:\D├®veloppement\bandtrack-mobile\build.gradle.kts'.
+Included projects: [root project 'BandTrack', project ':androidApp', project ':shared']
+Task path ':shared:compileDebugKotlinAndroid' matched project ':shared'
+
+> Configure project :
+Evaluating root project 'BandTrack' using build file 'D:\D├®veloppement\bandtrack-mobile\build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '8.13.2', apply: false]
+Resolved plugin [id: 'com.android.library', version: '8.13.2', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.android', version: '1.9.22', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.multiplatform', version: '1.9.22', apply: false]
+Resolved plugin [id: 'com.google.gms.google-services', version: '4.4.1', apply: false]
+
+> Configure project :shared
+Evaluating project ':shared' using build file 'D:\D├®veloppement\bandtrack-mobile\shared\build.gradle.kts'.
+Resolved plugin [id: 'org.jetbrains.kotlin.multiplatform']
+Resolved plugin [id: 'com.android.library']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.serialization', version: '1.9.22']
+Using Kotlin Gradle Plugin gradle82 variant
+WARNING: The option setting 'android.overridePathCheck=true' is experimental.
+The current default is 'false'.
+Using default execution profile
+w: Kotlin Multiplatform <-> Android Gradle Plugin compatibility issue:
+The applied Android Gradle Plugin version (8.13.2) is higher 
+than the maximum known to the Kotlin Gradle Plugin.
+Tooling stability in such configuration isn't tested, please report encountered issues to https://kotl.in/issue"
+
+Minimum supported Android Gradle Plugin version: 7.0
+Maximum tested Android Gradle Plugin version: 8.2
+
+To suppress this message add 'kotlin.mpp.androidGradlePluginCompatibility.nowarn=true' to your gradle.properties
+
+Task name matched 'compileDebugKotlinAndroid'
+
+> Configure project :androidApp
+Evaluating project ':androidApp' using build file 'D:\D├®veloppement\bandtrack-mobile\androidApp\build.gradle.kts'.
+Resolved plugin [id: 'com.android.application']
+Resolved plugin [id: 'org.jetbrains.kotlin.android']
+Resolved plugin [id: 'com.google.gms.google-services']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle82 variant
+
+[Incubating] Problems report is available at: file:///D:/D%C3%A9veloppement/bandtrack-mobile/build/reports/problems/problems-report.html
+Watched directory hierarchies: [D:\D├®veloppement\bandtrack-mobile]
