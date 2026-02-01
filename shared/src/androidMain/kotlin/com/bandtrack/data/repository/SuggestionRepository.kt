@@ -12,8 +12,27 @@ import kotlinx.coroutines.tasks.await
 /**
  * Repository pour la gestion des suggestions de morceaux
  */
-class SuggestionRepository(
-    private val firestoreService: FirestoreService = FirestoreService()
+import android.content.Context
+import androidx.work.OneTimeWorkRequest
+import androidx.work.WorkManager
+import com.bandtrack.data.local.PendingActionDao
+import com.bandtrack.data.local.PendingActionEntity
+import com.bandtrack.data.local.SuggestionDao
+import com.bandtrack.data.local.toEntity
+import com.bandtrack.data.local.toModel
+import com.bandtrack.workers.SyncWorker
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.coroutines.launch
+import java.util.UUID
+
+/**
+ * Repository pour la gestion des suggestions de morceaux
+ */
+open class SuggestionRepository(
+    private val context: Context? = null,
+    private val suggestionDao: SuggestionDao? = null,
+    private val pendingActionDao: PendingActionDao? = null
 ) {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -73,27 +92,74 @@ class SuggestionRepository(
     /**
      * Observer les suggestions en temps réel
      */
-    fun observeGroupSuggestions(groupId: String): Flow<List<Suggestion>> = callbackFlow {
-        val listener = db.collection("groups")
-            .document(groupId)
-            .collection("suggestions")
-            .whereEqualTo("status", SuggestionStatus.PENDING.name)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
+    /**
+     * Observer les suggestions en temps réel
+     */
+    fun observeGroupSuggestions(groupId: String): Flow<List<Suggestion>> {
+        if (suggestionDao == null) {
+            return callbackFlow {
+                val listener = db.collection("groups")
+                    .document(groupId)
+                    .collection("suggestions")
+                    .whereEqualTo("status", SuggestionStatus.PENDING.name)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            close(error)
+                            return@addSnapshotListener
+                        }
+                        
+                        val suggestions = snapshot?.documents?.mapNotNull { 
+                            it.toObject(Suggestion::class.java) 
+                        }?.sortedByDescending { it.voteCount } ?: emptyList()
+                        
+                        trySend(suggestions)
+                    }
                 
-                val suggestions = snapshot?.documents?.mapNotNull { 
-                    it.toObject(Suggestion::class.java) 
-                }?.sortedByDescending { it.voteCount } ?: emptyList()
-                
-                trySend(suggestions)
+                awaitClose { listener.remove() }
             }
-        
-        awaitClose { listener.remove() }
+        }
+
+        return callbackFlow {
+            // A. Local Flow
+            val localFlow = suggestionDao.getSuggestionsByGroup(groupId)
+            val job = launch {
+                localFlow.collect { entities ->
+                    trySend(entities.map { it.toModel() })
+                }
+            }
+            
+            // B. Remote Flow (Sync)
+            val listener = db.collection("groups")
+                .document(groupId)
+                .collection("suggestions")
+                .whereEqualTo("status", SuggestionStatus.PENDING.name)
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null && snapshot != null) {
+                        val suggestions = snapshot.documents.mapNotNull { 
+                            it.toObject(Suggestion::class.java) 
+                        }
+                        
+                        launch {
+                            try {
+                                val entities = suggestions.map { it.toEntity() }
+                                suggestionDao.replaceGroupSuggestions(groupId, entities)
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        }
+                    }
+                }
+            
+            awaitClose { 
+                job.cancel()
+                listener.remove() 
+            }
+        }
     }
 
+    /**
+     * Voter pour une suggestion
+     */
     /**
      * Voter pour une suggestion
      */
@@ -102,23 +168,57 @@ class SuggestionRepository(
         suggestionId: String,
         userId: String
     ): Result<Unit> = try {
-        val docRef = db.collection("groups")
-            .document(groupId)
-            .collection("suggestions")
-            .document(suggestionId)
-        
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(docRef)
-            val suggestion = snapshot.toObject(Suggestion::class.java)
-                ?: throw Exception("Suggestion not found")
+        if (suggestionDao != null && pendingActionDao != null && context != null) {
+            // 1. Get local
+            val entity = suggestionDao.getSuggestionById(suggestionId)
+            if (entity != null) {
+                // 2. Toggle vote locally
+                val suggestion = entity.toModel()
+                val updatedSuggestion = suggestion.toggleVote(userId)
+                suggestionDao.insertSuggestion(updatedSuggestion.toEntity())
+                
+                // 3. Queue Action
+                val action = PendingActionEntity(
+                    actionType = "UPDATE", // We treat vote as update of the suggestion object
+                    entityType = "SUGGESTION",
+                    entityId = suggestionId,
+                    parentId = groupId,
+                    payload = Json.encodeToString(updatedSuggestion),
+                    createdAt = System.currentTimeMillis()
+                )
+                pendingActionDao.insert(action)
+                
+                // 4. Sync
+                enqueueSync()
+            }
+            Result.success(Unit)
+        } else {
+            val docRef = db.collection("groups")
+                .document(groupId)
+                .collection("suggestions")
+                .document(suggestionId)
             
-            val updated = suggestion.toggleVote(userId)
-            transaction.set(docRef, updated)
-        }.await()
-        
-        Result.success(Unit)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                val suggestion = snapshot.toObject(Suggestion::class.java)
+                    ?: throw Exception("Suggestion not found")
+                
+                val updated = suggestion.toggleVote(userId)
+                transaction.set(docRef, updated)
+            }.await()
+            
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
+    }
+
+    private fun enqueueSync() {
+        context?.let { ctx ->
+            val workRequest = OneTimeWorkRequest.Builder(SyncWorker::class.java)
+                .build()
+            WorkManager.getInstance(ctx).enqueue(workRequest)
+        }
     }
 
     /**

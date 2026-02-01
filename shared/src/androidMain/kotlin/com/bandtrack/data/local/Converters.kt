@@ -38,4 +38,18 @@ class Converters {
     fun toIntMap(map: Map<String, Int>): String {
         return json.encodeToString(map)
     }
+
+    @TypeConverter
+    fun fromBooleanMap(value: String): Map<String, Boolean> {
+        return try {
+            json.decodeFromString(value)
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    @TypeConverter
+    fun toBooleanMap(map: Map<String, Boolean>): String {
+        return json.encodeToString(map)
+    }
 }

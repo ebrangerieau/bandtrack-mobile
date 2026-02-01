@@ -158,12 +158,14 @@ class SuggestionsViewModel(
 }
 
 class SuggestionsViewModelFactory(
+    private val suggestionRepository: SuggestionRepository,
     private val songRepository: SongRepository
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(SuggestionsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
             return SuggestionsViewModel(
+                suggestionRepository = suggestionRepository,
                 songRepository = songRepository
             ) as T
         }

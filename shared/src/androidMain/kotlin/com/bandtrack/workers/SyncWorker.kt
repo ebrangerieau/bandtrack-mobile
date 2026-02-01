@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.bandtrack.data.local.AppDatabase
 import com.bandtrack.data.models.Song
+import com.bandtrack.data.models.Suggestion
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.json.Json
@@ -47,7 +48,8 @@ class SyncWorker(
     private suspend fun processAction(action: com.bandtrack.data.local.PendingActionEntity) {
         when (action.entityType) {
             "SONG" -> processSongAction(action)
-            // Add other entities here
+            "SONG" -> processSongAction(action)
+            "SUGGESTION" -> processSuggestionAction(action)
         }
     }
 
@@ -59,6 +61,21 @@ class SyncWorker(
             "CREATE", "UPDATE" -> {
                  val song = Json.decodeFromString<Song>(action.payload)
                  collectionRef.document(action.entityId).set(song).await()
+            }
+            "DELETE" -> {
+                collectionRef.document(action.entityId).delete().await()
+            }
+        }
+    }
+
+    private suspend fun processSuggestionAction(action: com.bandtrack.data.local.PendingActionEntity) {
+        val groupId = action.parentId ?: throw IllegalStateException("Suggestion action must have parentId (groupId)")
+        val collectionRef = db.collection("groups").document(groupId).collection("suggestions")
+
+        when (action.actionType) {
+            "CREATE", "UPDATE" -> {
+                 val suggestion = Json.decodeFromString<Suggestion>(action.payload)
+                 collectionRef.document(action.entityId).set(suggestion).await()
             }
             "DELETE" -> {
                 collectionRef.document(action.entityId).delete().await()

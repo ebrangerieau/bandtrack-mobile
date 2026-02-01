@@ -62,6 +62,13 @@ fun BandTrackApp(
             database.pendingActionDao()
         ) 
     }
+    val suggestionRepository = remember { 
+        com.bandtrack.data.repository.SuggestionRepository(
+            context, 
+            database.suggestionDao(), 
+            database.pendingActionDao()
+        ) 
+    }
 
 
     Surface(
@@ -140,7 +147,8 @@ fun BandTrackApp(
                             onNavigateToProfile = {
                                 currentScreen = Screen.Profile
                             },
-                            songRepository = songRepository
+                            songRepository = songRepository,
+                            suggestionRepository = suggestionRepository
                         )
                     }
                 }
@@ -164,7 +172,8 @@ fun HomeScreen(
     group: Group,
     onChangeGroup: () -> Unit,
     onNavigateToProfile: () -> Unit,
-    songRepository: com.bandtrack.data.repository.SongRepository
+    songRepository: com.bandtrack.data.repository.SongRepository,
+    suggestionRepository: com.bandtrack.data.repository.SuggestionRepository
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val authViewModel: AuthViewModel = viewModel()
@@ -258,7 +267,8 @@ fun HomeScreen(
                                 groupId = group.id,
                                 userId = currentUser!!.id,
                                 userName = currentUser!!.displayName,
-                                songRepository = songRepository
+                                songRepository = songRepository,
+                                suggestionRepository = suggestionRepository
                             )
                         }
                     }
