@@ -325,7 +325,7 @@ class AudioNoteViewModel(
         viewModelScope.launch {
             songRepository.getSong(groupId, songId).onSuccess { song ->
                  val originalKey = song.key
-                 if (originalKey.isNotEmpty()) {
+                 if (!originalKey.isNullOrEmpty()) {
                      val suggestion = com.bandtrack.utils.TranspositionHelper.getTranspositionSuggestion(originalKey, detectedRoot)
                      
                      val currentMap = _transpositionSuggestions.value.toMutableMap()

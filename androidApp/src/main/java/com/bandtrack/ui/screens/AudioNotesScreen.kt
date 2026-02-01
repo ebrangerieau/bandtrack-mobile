@@ -135,7 +135,6 @@ fun AudioNotesScreen(
                         transpositionSuggestions = transpositionSuggestions,
                         isAnalyzing = isAnalyzing
                     )
-                    )
                 }
             }
 
@@ -185,7 +184,6 @@ private fun AudioNotesList(
     transpositionSuggestions: Map<String, String>,
     isAnalyzing: Boolean
 ) {
-) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -224,7 +222,6 @@ private fun AudioNoteItem(
     detectedKey: com.bandtrack.services.audio.DetectedKey?,
     transpositionSuggestion: String?,
     isAnalyzing: Boolean
-) {
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }

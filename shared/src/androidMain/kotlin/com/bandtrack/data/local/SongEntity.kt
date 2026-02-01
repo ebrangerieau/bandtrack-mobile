@@ -20,6 +20,7 @@ data class SongEntity(
     val key: String?,
     val tempo: Int?,
     val notes: String,
+    val lyrics: String,
     val masteryLevels: Map<String, Int>, // Converti via Converters
     val addedBy: String,
     val addedAt: Long,
@@ -44,6 +45,7 @@ fun Song.toEntity(): SongEntity {
         key = key,
         tempo = tempo,
         notes = notes,
+        lyrics = lyrics,
         masteryLevels = masteryLevels,
         addedBy = addedBy,
         addedAt = addedAt,
@@ -69,6 +71,7 @@ fun SongEntity.toModel(): Song {
         key = key,
         tempo = tempo,
         notes = notes,
+        lyrics = lyrics,
         masteryLevels = masteryLevels,
         addedBy = addedBy,
         addedAt = addedAt,

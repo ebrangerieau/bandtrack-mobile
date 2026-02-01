@@ -17,6 +17,7 @@ data class Song(
     val key: String? = null, // Tonalité (ex: "Am", "G", "C#m")
     val tempo: Int? = null, // BPM
     val notes: String = "", // Notes générales sur le morceau
+    val lyrics: String = "", // Paroles et accords
     val masteryLevels: Map<String, Int> = emptyMap(), // userId -> niveau (0-10)
     val addedBy: String = "", // User ID
     val addedAt: Long = 0L,

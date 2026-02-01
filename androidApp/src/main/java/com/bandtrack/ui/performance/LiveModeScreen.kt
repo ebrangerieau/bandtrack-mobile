@@ -32,6 +32,7 @@ import com.bandtrack.ui.viewmodels.PerformanceViewModel
 import com.bandtrack.ui.viewmodels.PerformanceViewModelFactory
 import kotlinx.coroutines.launch
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun LiveModeScreen(
     performanceId: String,

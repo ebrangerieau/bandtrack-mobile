@@ -6,7 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
-@Database(entities = [SongEntity::class, PendingActionEntity::class, SuggestionEntity::class, PerformanceEntity::class], version = 5, exportSchema = false)
+@Database(entities = [SongEntity::class, PendingActionEntity::class, SuggestionEntity::class, PerformanceEntity::class], version = 6, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun songDao(): SongDao
