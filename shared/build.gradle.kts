@@ -2,6 +2,7 @@ plugins {
     kotlin("multiplatform")
     id("com.android.library")
     kotlin("plugin.serialization")
+    id("com.google.devtools.ksp") // Plugin KSP pour Room
 }
 
 kotlin {
@@ -74,4 +75,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    // KSP pour Android (Room)
+    add("kspAndroid", "androidx.room:room-compiler:2.6.1")
 }

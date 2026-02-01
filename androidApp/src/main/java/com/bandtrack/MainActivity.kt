@@ -40,6 +40,14 @@ fun BandTrackApp(
     val currentUser by authViewModel.currentUser.collectAsState()
     var selectedGroup by remember { mutableStateOf<Group?>(null) }
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
+    
+    // Initialisation DB Locale
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val database = remember { com.bandtrack.data.local.AppDatabase.getDatabase(context) }
+    
+    // Injection manuelle du DAO dans le Repository (via factory ou setter plus tard)
+    // Pour l'instant, on laisse le repository se débrouiller ou on le passe
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),

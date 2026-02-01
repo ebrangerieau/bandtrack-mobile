@@ -10,6 +10,9 @@ plugins {
     
     // Firebase
     id("com.google.gms.google-services") version "4.4.1" apply false
+
+    // KSP (Symbol Processing) pour Room
+    id("com.google.devtools.ksp") version "1.9.22-1.0.17" apply false
 }
 
 tasks.register("clean", Delete::class) {

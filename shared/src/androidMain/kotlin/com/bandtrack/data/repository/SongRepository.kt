@@ -2,17 +2,23 @@ package com.bandtrack.data.repository
 
 import com.bandtrack.data.models.Song
 import com.bandtrack.data.models.Suggestion
+import com.bandtrack.data.local.toEntity
+import com.bandtrack.data.local.toModel
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
  * Repository pour la gestion du répertoire de morceaux
  */
-open class SongRepository {
+open class SongRepository(
+    private val songDao: com.bandtrack.data.local.SongDao? = null
+) {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+
 
     /**
      * Créer un nouveau morceau
@@ -74,24 +80,70 @@ open class SongRepository {
     /**
      * Observer les morceaux en temps réel
      */
-    open fun observeGroupSongs(groupId: String): Flow<List<Song>> = callbackFlow {
-        val listener = db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
+    /**
+     * Observer les morceaux (Single Source of Truth: DB Locale)
+     * 1. Émet immédiatement les données locales (Flow de Room)
+     * 2. Lance une écoute Firestore pour mettre à jour la DB locale
+     */
+    open fun observeGroupSongs(groupId: String): Flow<List<Song>> {
+        // Si pas de DAO (cas des tests ou non initialisé), fallback sur Firestore direct (comportement précédent)
+        if (songDao == null) {
+            return callbackFlow {
+                val listener = db.collection("groups")
+                    .document(groupId)
+                    .collection("songs")
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            close(error)
+                            return@addSnapshotListener
+                        }
+                        
+                        val songs = snapshot?.documents?.mapNotNull { 
+                            it.toObject(Song::class.java) 
+                        }?.sortedBy { it.title } ?: emptyList()
+                        
+                        trySend(songs)
+                    }
+                awaitClose { listener.remove() }
+            }
+        }
+
+        // Mode Offline-First
+        return callbackFlow {
+            // A. Observer la DB locale et émettre les mises à jour UI
+            val localFlow = songDao.getSongsByGroup(groupId)
+            val job = launch {
+                localFlow.collect { entities ->
+                    trySend(entities.map { it.toModel() })
+                }
+            }
+            
+            // B. Écouter Firestore et mettre à jour la DB locale
+            val listener = db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .addSnapshotListener { snapshot, error ->
+                    if (error == null && snapshot != null) {
+                        val songs = snapshot.documents.mapNotNull { 
+                            it.toObject(Song::class.java) 
+                        }
+                        // Mise à jour de la cache locale
+                        launch {
+                            try {
+                                val entities = songs.map { it.toEntity() }
+                                songDao.replaceGroupSongs(groupId, entities)
+                            } catch (e: Exception) {
+                                e.printStackTrace() // Log error
+                            }
+                        }
+                    }
                 }
                 
-                val songs = snapshot?.documents?.mapNotNull { 
-                    it.toObject(Song::class.java) 
-                }?.sortedBy { it.title } ?: emptyList()
-                
-                trySend(songs)
+            awaitClose { 
+                job.cancel()
+                listener.remove() 
             }
-        
-        awaitClose { listener.remove() }
+        }
     }
 
     /**

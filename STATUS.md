@@ -61,6 +61,7 @@
 - ✅ Build réussi - APK généré avec succès
 
 ### ✅ Runtime - RÉSOLU
+- ✅ Mode Hors Ligne (Lecture) : Intégration Room Database
 - ✅ Correction conflit getters `getRole` sur `GroupMember` (renommé en `toRoleEnum`)
 - ✅ Optimisation des requêtes Firestore (ajout `memberIds` au modèle Group)
 - ✅ Création du fichier `firestore.rules` optimisé
@@ -112,20 +113,29 @@
 
 
 
+### Phase 7 : Mode Hors Ligne & Synchronisation 📡
+- [ ] **Persistance Locale** (Room Database)
+- [ ] **Cache** pour les données Firestore (Groupes, Chansons, Events)
+- [ ] **Synchronisation** (Worker Manager pour l'upload différé)
+- [ ] **Gestion des conflits** simple
+
+**Technologies** : Room, WorkManager, SQLDelight (optionnel pour KMP)
+
 ## 🎯 Objectifs à Long Terme
 
-- [ ] **Phase 8** : Intégrations externes (Spotify, YouTube)
-- [ ] **Phase 9** : Version iOS (grâce à KMP)
-- [ ] **Phase 10** : Publication sur Play Store
+- [ ] **Phase 8** : Partage P2P (Fichiers audio lourds)
+- [ ] **Phase 9** : Intégrations externes (Spotify, YouTube)
+- [ ] **Phase 10** : Version iOS (grâce à KMP)
+- [ ] **Phase 11** : Publication sur Play Store
 
 ## 📊 Métriques du Projet
 
-- **Fichiers Kotlin** : ~25
+- **Fichiers Kotlin** : ~28
 - **Modèles de données** : 6 (User, Group, InvitationCode, Suggestion, Song, AudioNote)
-- **Repositories** : 4 (Auth, Group, Suggestion, Song)
-- **ViewModels** : 4 (Auth, GroupSelector, Suggestions, Repertoire)
-- **Écrans UI** : 5 (Login, Register, GroupSelector, Suggestions, Repertoire)
-- **Lignes de code** : ~3000+
+- **Repositories** : 5 (Auth, Group, Suggestion, Song, AudioNote)
+- **ViewModels** : 5 (Auth, Group, Suggestions, Repertoire, AudioNote)
+- **Écrans UI** : 6 (Login, Register, Group, Suggestions, Repertoire, AudioNotes)
+- **Lignes de code** : ~3500+
 
 ## 🔒 Sécurité
 
@@ -137,9 +147,8 @@
 
 ## 🐛 Problèmes Connus
 
-1. ~~**Build** : Erreurs de compilation à résoudre~~ ✅ **RÉSOLU** (2026-02-01)
-2. **Timestamps** : Les timestamps sont à 0L, à définir lors de la création côté Repository
-3. **Tests** : Aucun test automatisé pour le moment
+1. **Timestamps** : Les timestamps sont à 0L, à définir lors de la création côté Repository
+2. **Tests** : Aucun test automatisé pour le moment
 
 ## 💡 Notes
 
@@ -147,3 +156,17 @@
 - **Material Design 3** pour une UI moderne
 - **Firebase** pour le backend (Auth + Firestore)
 - **Synchronisation temps réel** avec Flow et Firestore listeners
+
+---
+
+## 🎵 Roadmap & Statut Global
+
+- [x] **Phase 1-2** : Infra & Auth
+- [x] **Phase 3** : Répertoire & Suggestions
+- [x] **Phase 4** : Planification (Events)
+- [x] **Phase 5** : UX (Tri, Recherche)
+- [x] **Phase 6** : Tests & Docs (Partiel)
+- [ ] **Phase 7** : Mode Hors Ligne (Room)
+- [ ] **Phase 8** : Partage P2P
+- [ ] **Phase 9** : Version iOS
+
