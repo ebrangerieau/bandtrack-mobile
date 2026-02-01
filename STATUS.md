@@ -72,18 +72,17 @@
 
 **Technologies** : MediaRecorder, MediaPlayer, File Storage, Kotlin Coroutines
 
-### Option B : Phase 4 - Planification & Prestations 📅
-**Complexité** : Moyenne  
-**Durée estimée** : 3-4h
+### Phase 4 : Planification & Prestations 📅 ✅ (Terminé 2026-02-01)
+- [x] Modèle de données `Performance` (Concert, Répétition)
+- [x] Repository Firestore (`PerformanceRepository`)
+- [x] ViewModel (`PerformanceViewModel`)
+- [x] UI Liste des événements (À venir / Passés)
+- [x] UI Ajout/Suppression d'événement
+- [x] Gestion des Setlists (Sélection de morceaux pour un événement)
+- [x] Éditeur de Setlist (Drag & Drop simplifié, Suppression)
+- [ ] Notifications push (reporté à plus tard)
 
-- [ ] Modèle Performance (concert/répétition)
-- [ ] PerformanceRepository
-- [ ] PerformanceViewModel
-- [ ] Calendrier des événements
-- [ ] Sélection de morceaux pour une prestation
-- [ ] Notifications push (optionnel)
-
-**Technologies** : Calendar UI, Firebase Cloud Messaging (optionnel)
+**Technologies** : Firestore, DatePicker, TabRow, Custom Setlist Editor
 
 ### Option C : Phase 5 - Améliorations UX 🎨
 **Complexité** : Faible  

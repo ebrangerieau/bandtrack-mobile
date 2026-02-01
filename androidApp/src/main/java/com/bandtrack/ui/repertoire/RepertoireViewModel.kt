@@ -23,6 +23,14 @@ class RepertoireViewModel(
     private val songRepository: SongRepository = SongRepository()
 ) : ViewModel() {
 
+    private val _rawSongs = MutableStateFlow<List<Song>>(emptyList())
+    
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+    private val _sortOption = MutableStateFlow(SortOption.TITLE)
+    val sortOption = _sortOption.asStateFlow()
+
     private val _uiState = MutableStateFlow<RepertoireUiState>(RepertoireUiState.Loading)
     val uiState: StateFlow<RepertoireUiState> = _uiState.asStateFlow()
 
@@ -36,6 +44,37 @@ class RepertoireViewModel(
         currentGroupId = groupId
         currentUserId = userId
         observeSongs()
+        observeUiState()
+    }
+
+    private fun observeUiState() {
+        viewModelScope.launch {
+            combine(
+                _rawSongs,
+                _searchQuery,
+                _sortOption
+            ) { songs, query, sort ->
+                Triple(songs, query, sort)
+            }.collect { (songs, query, sort) ->
+                val filtered = if (query.isBlank()) {
+                    songs
+                } else {
+                    songs.filter { 
+                        it.title.contains(query, ignoreCase = true) || 
+                        it.artist.contains(query, ignoreCase = true)
+                    }
+                }
+
+                val sorted = when (sort) {
+                    SortOption.TITLE -> filtered.sortedBy { it.title }
+                    SortOption.ARTIST -> filtered.sortedBy { it.artist }
+                    SortOption.MASTERY_ASC -> filtered.sortedBy { it.getMasteryAverage() }
+                    SortOption.MASTERY_DESC -> filtered.sortedByDescending { it.getMasteryAverage() }
+                }
+
+                _uiState.value = RepertoireUiState.Success(sorted)
+            }
+        }
     }
 
     /**
@@ -50,9 +89,17 @@ class RepertoireViewModel(
                     )
                 }
                 .collect { songs ->
-                    _uiState.value = RepertoireUiState.Success(songs)
+                    _rawSongs.value = songs
                 }
         }
+    }
+    
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun onSortOptionChanged(option: SortOption) {
+        _sortOption.value = option
     }
 
     /**
@@ -162,4 +209,8 @@ class RepertoireViewModel(
             emptyList()
         }
     }
+}
+
+enum class SortOption {
+    TITLE, ARTIST, MASTERY_ASC, MASTERY_DESC
 }

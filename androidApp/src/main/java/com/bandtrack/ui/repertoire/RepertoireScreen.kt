@@ -3,6 +3,7 @@ package com.bandtrack.ui.repertoire
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import com.bandtrack.ui.repertoire.SortOption
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -24,7 +25,11 @@ fun RepertoireScreen(
     onNavigateToAudioNotes: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val sortOption by viewModel.sortOption.collectAsState()
+    
     var showAddDialog by remember { mutableStateOf(false) }
+    var showSortMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(groupId) {
         viewModel.initialize(groupId, userId)
@@ -34,6 +39,49 @@ fun RepertoireScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Répertoire") },
+                actions = {
+                    IconButton(onClick = { showSortMenu = true }) {
+                        Icon(Icons.Default.Sort, contentDescription = "Trier")
+                    }
+                    DropdownMenu(
+                        expanded = showSortMenu,
+                        onDismissRequest = { showSortMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Titre") },
+                            onClick = { 
+                                viewModel.onSortOptionChanged(SortOption.TITLE)
+                                showSortMenu = false
+                            },
+                            trailingIcon = { if (sortOption == SortOption.TITLE) Icon(Icons.Default.Check, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Artiste") },
+                            onClick = { 
+                                viewModel.onSortOptionChanged(SortOption.ARTIST)
+                                showSortMenu = false
+                            },
+                            trailingIcon = { if (sortOption == SortOption.ARTIST) Icon(Icons.Default.Check, null) }
+                        )
+                        HorizontalDivider()
+                        DropdownMenuItem(
+                            text = { Text("Maîtrise -") },
+                            onClick = { 
+                                viewModel.onSortOptionChanged(SortOption.MASTERY_ASC)
+                                showSortMenu = false
+                            },
+                            trailingIcon = { if (sortOption == SortOption.MASTERY_ASC) Icon(Icons.Default.Check, null) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Maîtrise +") },
+                            onClick = { 
+                                viewModel.onSortOptionChanged(SortOption.MASTERY_DESC)
+                                showSortMenu = false
+                            },
+                            trailingIcon = { if (sortOption == SortOption.MASTERY_DESC) Icon(Icons.Default.Check, null) }
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer
@@ -48,37 +96,68 @@ fun RepertoireScreen(
             }
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            when (val state = uiState) {
-                is RepertoireUiState.Loading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                is RepertoireUiState.Success -> {
-                    if (state.songs.isEmpty()) {
-                        EmptyRepertoireView(
-                            onAddClick = { showAddDialog = true }
-                        )
-                    } else {
-                        SongsList(
-                            songs = state.songs,
-                            currentUserId = userId,
-                            onMasteryChange = viewModel::updateMyMasteryLevel,
-                            onNavigateToAudioNotes = onNavigateToAudioNotes,
-                            onDelete = viewModel::deleteSong
-                        )
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::onSearchQueryChanged,
+                placeholder = { Text("Rechercher (titre, artiste)...") },
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                singleLine = true,
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchQueryChanged("") }) {
+                            Icon(Icons.Default.Clear, "Effacer")
+                        }
                     }
                 }
-                is RepertoireUiState.Error -> {
-                    ErrorView(
-                        message = state.message,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(1f)
+            ) {
+                when (val state = uiState) {
+                    is RepertoireUiState.Loading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    is RepertoireUiState.Success -> {
+                        if (state.songs.isEmpty()) {
+                            if (searchQuery.isNotEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("Aucun résultat pour \"$searchQuery\"")
+                                }
+                            } else {
+                                EmptyRepertoireView(
+                                    onAddClick = { showAddDialog = true }
+                                )
+                            }
+                        } else {
+                            SongsList(
+                                songs = state.songs,
+                                currentUserId = userId,
+                                onMasteryChange = viewModel::updateMyMasteryLevel,
+                                onNavigateToAudioNotes = onNavigateToAudioNotes,
+                                onDelete = viewModel::deleteSong
+                            )
+                        }
+                    }
+                    is RepertoireUiState.Error -> {
+                        ErrorView(
+                            message = state.message,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
             }
         }

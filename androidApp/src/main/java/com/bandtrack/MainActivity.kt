@@ -190,6 +190,12 @@ fun HomeScreen(
                         selected = selectedTab == 1,
                         onClick = { selectedTab = 1 }
                     )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Event, contentDescription = null) },
+                        label = { Text("Planning") },
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 }
+                    )
                 }
             }
         ) { padding ->
@@ -210,25 +216,21 @@ fun HomeScreen(
                     }
                     1 -> {
                         if (currentUser != null) {
-                            // Nous avons besoin de récupérer le titre du morceau depuis l'ID dans le callback
-                            // Pour simplifier ici, nous allons juste passer l'ID et RepertoireScreen devra peut-être changer
-                            // Ou mieux, on change le callback de RepertoireScreen pour passer le titre aussi
-                            
-                            // Petite astuce : on va modifier RepertoireScreen pour qu'il nous file le titre
-                            // Mais comme je ne peux pas modifier RepertoireScreen instantanément ici sans recompiler,
-                            // je vais devoir adapter RepertoireScreen juste après.
-                            
-                            // Pour l'instant on suppose que RepertoireScreen va être adapté
                             com.bandtrack.ui.repertoire.RepertoireScreen(
                                 groupId = group.id,
                                 userId = currentUser!!.id,
                                 onNavigateToAudioNotes = { songId ->
                                     selectedSongId = songId
-                                    // Idéalement on récupérerait le titre ici, mais on va le faire "lazy"
-                                    // ou modifier RepertoireScreen pour passer le titre.
-                                    // Pour l'instant mettons un placeholder qui sera mis à jour
                                     selectedSongTitle = "Morceau" 
                                 }
+                            )
+                        }
+                    }
+                    2 -> {
+                        if (currentUser != null) {
+                            com.bandtrack.ui.performance.PerformanceScreen(
+                                groupId = group.id,
+                                userId = currentUser!!.id
                             )
                         }
                     }
