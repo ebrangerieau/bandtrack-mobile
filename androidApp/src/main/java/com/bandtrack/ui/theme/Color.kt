@@ -11,24 +11,23 @@ val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
-// Couleurs BandTrack - Mode sombre dominant
-val PrimaryDark = Color(0xFF00E676) // Vert vif pour actions principales
-val SecondaryDark = Color(0xFFFF6E40) // Orange pour éléments secondaires
-val BackgroundDark = Color(0xFF121212) // Noir profond
-val SurfaceDark = Color(0xFF1E1E1E) // Gris très foncé
-val OnPrimaryDark = Color(0xFF000000)
-val OnSecondaryDark = Color(0xFFFFFFFF)
+// Palette BandTrack Studio (Dark Mode Only)
+val PrimaryColor = Color(0xFF7C4DFF) // Violet Électrique (Deep Purple 400 Accent)
+val SecondaryColor = Color(0xFFFF4081) // Rose Néon (Pink A200)
+val TertiaryColor = Color(0xFF64FFDA) // Menthe Néon (Teal A200) - Pour les infos/succès
 
-// Couleurs BandTrack - Mode clair (optionnel)
-val PrimaryLight = Color(0xFF00C853)
-val SecondaryLight = Color(0xFFFF5722)
-val BackgroundLight = Color(0xFFFFFBFE)
-val SurfaceLight = Color(0xFFFFFFFF)
-val OnPrimaryLight = Color(0xFFFFFFFF)
-val OnSecondaryLight = Color(0xFFFFFFFF)
+val BackgroundDark = Color(0xFF0A0E14) // Bleu Nuit Profond (Presque noir, mais plus riche)
+val SurfaceDark = Color(0xFF161B22) // Gris bleuté très foncé (pour les cartes)
+val SurfaceVariantDark = Color(0xFF262C36) // Gris bleuté un peu moins foncé (pour les headers)
 
-// Couleurs fonctionnelles
-val SuccessColor = Color(0xFF4CAF50)
+val OnPrimary = Color.White
+val OnSecondary = Color.White
+val OnBackground = Color(0xFFE0E0E0) // Gris clair pour le texte principal
+val OnSurface = Color(0xFFCCCCCC) // Gris moyen pour le texte secondaire
+
+val SuccessColor = Color(0xFF00E676)
 val WarningColor = Color(0xFFFFC107)
-val ErrorColor = Color(0xFFF44336)
-val InfoColor = Color(0xFF2196F3)
+val ErrorColor = Color(0xFFFF5252)
+
+// Pour Glassmorphism (Surface transparente)
+val SurfaceGlass = Color(0xCC161B22)

@@ -52,4 +52,18 @@ class Converters {
     fun toBooleanMap(map: Map<String, Boolean>): String {
         return json.encodeToString(map)
     }
+
+    @TypeConverter
+    fun fromStringList(value: String): List<String> {
+        return try {
+            json.decodeFromString(value)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    @TypeConverter
+    fun toStringList(list: List<String>): String {
+        return json.encodeToString(list)
+    }
 }

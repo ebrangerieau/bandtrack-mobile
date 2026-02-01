@@ -15,53 +15,46 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+// Force Dark Mode Palette
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark,
-    secondary = SecondaryDark,
+    primary = PrimaryColor,
+    secondary = SecondaryColor,
+    tertiary = TertiaryColor,
     background = BackgroundDark,
     surface = SurfaceDark,
-    onPrimary = OnPrimaryDark,
-    onSecondary = OnSecondaryDark,
-    error = ErrorColor
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = PrimaryLight,
-    secondary = SecondaryLight,
-    background = BackgroundLight,
-    surface = SurfaceLight,
-    onPrimary = OnPrimaryLight,
-    onSecondary = OnSecondaryLight,
+    surfaceVariant = SurfaceVariantDark,
+    onPrimary = OnPrimary,
+    onSecondary = OnSecondary,
+    onBackground = OnBackground,
+    onSurface = OnSurface,
     error = ErrorColor
 )
 
 @Composable
 fun BandTrackTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(), // Par défaut suit le système
-    dynamicColor: Boolean = false, // Désactivé pour garder notre palette custom
+    // darkTheme est ignoré ici car on force le mode sombre
+    darkTheme: Boolean = true, 
+    // dynamicColor est désactivé pour garder l'identité visuelle
+    dynamicColor: Boolean = false, 
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    // On ignore le Dynamic Color d'Android 12+ pour imposer notre style
+    val colorScheme = DarkColorScheme
     
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            // Icônes de statut claires car fond sombre
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }
