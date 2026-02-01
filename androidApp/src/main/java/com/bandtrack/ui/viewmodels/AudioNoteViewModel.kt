@@ -5,8 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bandtrack.data.models.AudioNote
 import com.bandtrack.data.repository.AudioNoteRepository
+import com.bandtrack.data.repository.SongRepository
 import com.bandtrack.services.AudioPlayerService
 import com.bandtrack.services.AudioRecorderService
+import com.bandtrack.services.audio.AudioAnalysisService
+import com.bandtrack.services.audio.DetectedKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,11 +21,13 @@ import java.util.UUID
  */
 class AudioNoteViewModel(
     private val context: Context,
-    private val repository: AudioNoteRepository
+    private val repository: AudioNoteRepository,
+    private val songRepository: SongRepository
 ) : ViewModel() {
 
     private val recorderService = AudioRecorderService(context)
     private val playerService = AudioPlayerService(context)
+    private val analysisService = AudioAnalysisService(context)
 
     // État de l'enregistrement
     private val _isRecording = MutableStateFlow(false)
@@ -54,6 +59,14 @@ class AudioNoteViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    // Résultats d'analyse : Map<NoteId, DetectedKey>
+    private val _analysisResults = MutableStateFlow<Map<String, DetectedKey>>(emptyMap())
+    val analysisResults: StateFlow<Map<String, DetectedKey>> = _analysisResults.asStateFlow()
+
+    // Loading spécifique pour l'analyse
+    private val _isAnalyzing = MutableStateFlow(false)
+    val isAnalyzing: StateFlow<Boolean> = _isAnalyzing.asStateFlow()
 
     private var recordingStartTime = 0L
     private var currentRecordingFileName: String? = null
@@ -277,6 +290,50 @@ class AudioNoteViewModel(
      */
     fun clearError() {
         _error.value = null
+    }
+
+    /**
+     * Analyse une note audio
+     */
+    fun analyzeAudio(note: AudioNote) {
+        viewModelScope.launch {
+            _isAnalyzing.value = true
+            
+            analysisService.analyzeKey(note.localFilePath).fold(
+                onSuccess = { result ->
+                    val currentMap = _analysisResults.value.toMutableMap()
+                    currentMap[note.id] = result
+                    _analysisResults.value = currentMap
+                    _isAnalyzing.value = false
+                    
+                    // Calculer la transposition si possible
+                    calculateTransposition(note.groupId, note.songId, note.id, result.rootNote)
+                },
+                onFailure = { e ->
+                    _error.value = "Analyse échouée : ${e.message}"
+                    _isAnalyzing.value = false
+                }
+            )
+        }
+    }
+
+    // Message de transposition : Map<NoteId, String>
+    private val _transpositionSuggestions = MutableStateFlow<Map<String, String>>(emptyMap())
+    val transpositionSuggestions: StateFlow<Map<String, String>> = _transpositionSuggestions.asStateFlow()
+
+    private fun calculateTransposition(groupId: String, songId: String, noteId: String, detectedRoot: String) {
+        viewModelScope.launch {
+            songRepository.getSong(groupId, songId).onSuccess { song ->
+                 val originalKey = song.key
+                 if (originalKey.isNotEmpty()) {
+                     val suggestion = com.bandtrack.utils.TranspositionHelper.getTranspositionSuggestion(originalKey, detectedRoot)
+                     
+                     val currentMap = _transpositionSuggestions.value.toMutableMap()
+                     currentMap[noteId] = suggestion
+                     _transpositionSuggestions.value = currentMap
+                 }
+            }
+        }
     }
 
     override fun onCleared() {

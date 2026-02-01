@@ -194,7 +194,7 @@ fun HomeScreen(
 
     if (selectedSongId != null && currentUser != null) {
         val audioNoteViewModel: com.bandtrack.ui.viewmodels.AudioNoteViewModel = viewModel(
-            factory = com.bandtrack.ui.viewmodels.AudioNoteViewModelFactory(context, audioNoteRepository)
+            factory = com.bandtrack.ui.viewmodels.AudioNoteViewModelFactory(context, audioNoteRepository, songRepository)
         )
         
         com.bandtrack.ui.screens.AudioNotesScreen(

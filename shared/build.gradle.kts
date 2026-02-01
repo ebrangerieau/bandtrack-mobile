@@ -55,6 +55,10 @@ kotlin {
 
                 // WorkManager
                 implementation("androidx.work:work-runtime-ktx:2.9.0")
+
+                // TarsosDSP (Audio Analysis)
+                implementation("be.tarsos.dsp:core:2.5")
+                implementation("be.tarsos.dsp:jvm:2.5")
             }
         }
 

@@ -197,6 +197,15 @@ open class SongRepository(
      */
     suspend fun getSong(groupId: String, songId: String): Result<Song> {
         return try {
+            // 1. Essai Local
+            if (songDao != null) {
+                val localEntity = songDao.getSongById(songId)
+                if (localEntity != null) {
+                    return Result.success(localEntity.toModel())
+                }
+            }
+
+            // 2. Fallback Remote (si nécessaire ou si le morceau n'est pas encore sync)
             val snapshot = db.collection("groups")
                 .document(groupId)
                 .collection("songs")

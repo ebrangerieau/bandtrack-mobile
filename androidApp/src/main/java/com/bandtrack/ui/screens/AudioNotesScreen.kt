@@ -42,6 +42,9 @@ fun AudioNotesScreen(
     val currentPlayingNoteId by viewModel.currentPlayingNoteId.collectAsState()
     val error by viewModel.error.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val analysisResults by viewModel.analysisResults.collectAsState()
+    val transpositionSuggestions by viewModel.transpositionSuggestions.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -126,7 +129,12 @@ fun AudioNotesScreen(
                         onDeleteClick = { viewModel.deleteAudioNote(it, songId) },
                         onRenameClick = { noteId, newTitle ->
                             viewModel.updateNoteTitle(noteId, newTitle, songId)
-                        }
+                        },
+                        onAnalyzeClick = { viewModel.analyzeAudio(it) },
+                        analysisResults = analysisResults,
+                        transpositionSuggestions = transpositionSuggestions,
+                        isAnalyzing = isAnalyzing
+                    )
                     )
                 }
             }
@@ -171,7 +179,12 @@ private fun AudioNotesList(
     onPauseClick: () -> Unit,
     onStopClick: () -> Unit,
     onDeleteClick: (String) -> Unit,
-    onRenameClick: (String, String) -> Unit
+    onRenameClick: (String, String) -> Unit,
+    onAnalyzeClick: (AudioNote) -> Unit,
+    analysisResults: Map<String, com.bandtrack.services.audio.DetectedKey>,
+    transpositionSuggestions: Map<String, String>,
+    isAnalyzing: Boolean
+) {
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -187,7 +200,11 @@ private fun AudioNotesList(
                 onPauseClick = onPauseClick,
                 onStopClick = onStopClick,
                 onDeleteClick = { onDeleteClick(note.id) },
-                onRenameClick = { newTitle -> onRenameClick(note.id, newTitle) }
+                onRenameClick = { newTitle -> onRenameClick(note.id, newTitle) },
+                onAnalyzeClick = { onAnalyzeClick(note) },
+                detectedKey = analysisResults[note.id],
+                transpositionSuggestion = transpositionSuggestions[note.id],
+                isAnalyzing = isAnalyzing
             )
         }
     }
@@ -202,7 +219,12 @@ private fun AudioNoteItem(
     onPauseClick: () -> Unit,
     onStopClick: () -> Unit,
     onDeleteClick: () -> Unit,
-    onRenameClick: (String) -> Unit
+    onRenameClick: (String) -> Unit,
+    onAnalyzeClick: () -> Unit,
+    detectedKey: com.bandtrack.services.audio.DetectedKey?,
+    transpositionSuggestion: String?,
+    isAnalyzing: Boolean
+) {
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
@@ -284,6 +306,14 @@ private fun AudioNoteItem(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Analyser (Tonalité)") },
+                        onClick = {
+                            showMenu = false
+                            onAnalyzeClick()
+                        },
+                        leadingIcon = { Icon(Icons.Default.GraphicEq, null) }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Renommer") },
                         onClick = {
                             showMenu = false
@@ -301,6 +331,57 @@ private fun AudioNoteItem(
                     )
                 }
             }
+        }
+        
+        // Résultats d'analyse
+        if (detectedKey != null) {
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outlineVariant)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.MusicNote, 
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Tonalité détectée : ${detectedKey.rootNote} ${detectedKey.scale}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "(${String.format("%.0f", detectedKey.confidence * 100)}%)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                if (transpositionSuggestion != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Lightbulb, 
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.tertiary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = transpositionSuggestion,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.tertiary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+        } else if (isAnalyzing) {
+             // Afficher un petit loading si cette note est en cours d'analyse serait mieux,
+             // mais _isAnalyzing est global. Pour l'instant on ne l'affiche pas ici ou générique.
+             // On pourrait ajouter 'processingNoteId' dans le ViewModel pour savoir quelle note charge.
         }
     }
 
