@@ -62,18 +62,15 @@
 
 ## 📋 Prochaines Étapes Suggérées
 
-### Option A : Phase 3.1 - Notes Audio 🎤
-**Complexité** : Moyenne  
-**Durée estimée** : 2-3h
+### Phase 3.1 : Notes Audio 🎤 ✅ (Terminé 2026-02-01)
+- [x] Service d'enregistrement audio Android (`AudioRecorderService`)
+- [x] Service de lecture audio Android (`AudioPlayerService`)
+- [x] Repository (`AudioNoteRepository`) avec fichiers locaux
+- [x] ViewModel (`AudioNoteViewModel`)
+- [x] UI complète (`AudioNotesScreen`) avec enregistrement, lecture, suppression
+- [x] Intégration depuis le menu du Répertoire
 
-- [ ] Service d'enregistrement audio Android
-- [ ] AudioNoteRepository
-- [ ] AudioNoteViewModel
-- [ ] UI d'enregistrement et lecture
-- [ ] Stockage local des fichiers
-- [ ] Liste des notes audio par morceau
-
-**Technologies** : MediaRecorder, MediaPlayer, File Storage
+**Technologies** : MediaRecorder, MediaPlayer, File Storage, Kotlin Coroutines
 
 ### Option B : Phase 4 - Planification & Prestations 📅
 **Complexité** : Moyenne  

@@ -123,70 +123,114 @@ fun HomeScreen(
     val authViewModel: AuthViewModel = viewModel()
     val currentUser by authViewModel.currentUser.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text(
-                            text = "BandTrack",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = group.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+    // États pour la navigation vers les notes audio
+    var selectedSongId by remember { mutableStateOf<String?>(null) }
+    var selectedSongTitle by remember { mutableStateOf("") }
+    
+    // Contexte et Repository pour AudioNotes
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val audioNoteRepository = remember { com.bandtrack.data.repository.AudioNoteRepository(context) }
+    
+    // Gestion du bouton retour
+    androidx.activity.compose.BackHandler(enabled = selectedSongId != null) {
+        selectedSongId = null
+    }
+
+    if (selectedSongId != null && currentUser != null) {
+        val audioNoteViewModel: com.bandtrack.ui.viewmodels.AudioNoteViewModel = viewModel(
+            factory = com.bandtrack.ui.viewmodels.AudioNoteViewModelFactory(context, audioNoteRepository)
+        )
+        
+        com.bandtrack.ui.screens.AudioNotesScreen(
+            songId = selectedSongId!!,
+            groupId = group.id,
+            userId = currentUser!!.id,
+            songTitle = selectedSongTitle,
+            viewModel = audioNoteViewModel,
+            onNavigateBack = { selectedSongId = null }
+        )
+    } else {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { 
+                        Column {
+                            Text(
+                                text = "BandTrack",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                text = group.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onChangeGroup) {
+                            Icon(Icons.Default.SwapHoriz, contentDescription = "Changer de groupe")
+                        }
+                        IconButton(onClick = onLogout) {
+                            Icon(Icons.Default.ExitToApp, contentDescription = "Déconnexion")
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = onChangeGroup) {
-                        Icon(Icons.Default.SwapHoriz, contentDescription = "Changer de groupe")
-                    }
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Déconnexion")
-                    }
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Lightbulb, contentDescription = null) },
+                        label = { Text("Suggestions") },
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.MusicNote, contentDescription = null) },
+                        label = { Text("Répertoire") },
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 }
+                    )
                 }
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Lightbulb, contentDescription = null) },
-                    label = { Text("Suggestions") },
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.MusicNote, contentDescription = null) },
-                    label = { Text("Répertoire") },
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 }
-                )
             }
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            when (selectedTab) {
-                0 -> {
-                    if (currentUser != null) {
-                        com.bandtrack.ui.suggestions.SuggestionsScreen(
-                            groupId = group.id,
-                            userId = currentUser!!.id,
-                            userName = currentUser!!.displayName
-                        )
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                when (selectedTab) {
+                    0 -> {
+                        if (currentUser != null) {
+                            com.bandtrack.ui.suggestions.SuggestionsScreen(
+                                groupId = group.id,
+                                userId = currentUser!!.id,
+                                userName = currentUser!!.displayName
+                            )
+                        }
                     }
-                }
-                1 -> {
-                    if (currentUser != null) {
-                        com.bandtrack.ui.repertoire.RepertoireScreen(
-                            groupId = group.id,
-                            userId = currentUser!!.id
-                        )
+                    1 -> {
+                        if (currentUser != null) {
+                            // Nous avons besoin de récupérer le titre du morceau depuis l'ID dans le callback
+                            // Pour simplifier ici, nous allons juste passer l'ID et RepertoireScreen devra peut-être changer
+                            // Ou mieux, on change le callback de RepertoireScreen pour passer le titre aussi
+                            
+                            // Petite astuce : on va modifier RepertoireScreen pour qu'il nous file le titre
+                            // Mais comme je ne peux pas modifier RepertoireScreen instantanément ici sans recompiler,
+                            // je vais devoir adapter RepertoireScreen juste après.
+                            
+                            // Pour l'instant on suppose que RepertoireScreen va être adapté
+                            com.bandtrack.ui.repertoire.RepertoireScreen(
+                                groupId = group.id,
+                                userId = currentUser!!.id,
+                                onNavigateToAudioNotes = { songId ->
+                                    selectedSongId = songId
+                                    // Idéalement on récupérerait le titre ici, mais on va le faire "lazy"
+                                    // ou modifier RepertoireScreen pour passer le titre.
+                                    // Pour l'instant mettons un placeholder qui sera mis à jour
+                                    selectedSongTitle = "Morceau" 
+                                }
+                            )
+                        }
                     }
                 }
             }

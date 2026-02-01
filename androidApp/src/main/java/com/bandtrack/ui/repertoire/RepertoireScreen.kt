@@ -20,7 +20,8 @@ import kotlin.math.roundToInt
 fun RepertoireScreen(
     groupId: String,
     userId: String,
-    viewModel: RepertoireViewModel = viewModel()
+    viewModel: RepertoireViewModel = viewModel(),
+    onNavigateToAudioNotes: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -68,6 +69,7 @@ fun RepertoireScreen(
                             songs = state.songs,
                             currentUserId = userId,
                             onMasteryChange = viewModel::updateMyMasteryLevel,
+                            onNavigateToAudioNotes = onNavigateToAudioNotes,
                             onDelete = viewModel::deleteSong
                         )
                     }
@@ -106,6 +108,7 @@ fun SongsList(
     songs: List<Song>,
     currentUserId: String,
     onMasteryChange: (String, Int) -> Unit,
+    onNavigateToAudioNotes: (String) -> Unit,
     onDelete: (String) -> Unit
 ) {
     LazyColumn(
@@ -118,6 +121,7 @@ fun SongsList(
                 song = song,
                 currentUserId = currentUserId,
                 onMasteryChange = { level -> onMasteryChange(song.id, level) },
+                onNavigateToAudioNotes = { onNavigateToAudioNotes(song.id) },
                 onDelete = { onDelete(song.id) }
             )
         }
@@ -129,6 +133,7 @@ fun SongCard(
     song: Song,
     currentUserId: String,
     onMasteryChange: (Int) -> Unit,
+    onNavigateToAudioNotes: () -> Unit,
     onDelete: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -200,6 +205,17 @@ fun SongCard(
                             Icon(Icons.Default.Info, contentDescription = null)
                         }
                     )
+                    DropdownMenuItem(
+                        text = { Text("Notes Audio") },
+                        onClick = {
+                            onNavigateToAudioNotes()
+                            showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Default.Mic, contentDescription = null)
+                        }
+                    )
+                    HorizontalDivider()
                     DropdownMenuItem(
                         text = { Text("Supprimer") },
                         onClick = {
