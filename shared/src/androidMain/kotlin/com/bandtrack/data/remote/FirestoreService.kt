@@ -1,8 +1,8 @@
 package com.bandtrack.data.remote
 
 import com.bandtrack.data.models.*
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -69,7 +69,12 @@ class FirestoreService {
     suspend fun createGroup(group: Group, creatorUserId: String): Result<String> = try {
         // Créer le groupe
         val groupRef = groupsCollection.document()
-        val groupWithId = group.copy(id = groupRef.id, createdBy = creatorUserId)
+        val groupWithId = group.copy(
+            id = groupRef.id, 
+            createdBy = creatorUserId,
+            memberIds = listOf(creatorUserId),
+            memberCount = 1
+        )
         groupRef.set(groupWithId).await()
 
         // Ajouter le créateur comme admin
@@ -116,21 +121,13 @@ class FirestoreService {
      * Récupérer les groupes d'un utilisateur
      */
     suspend fun getUserGroups(userId: String): Result<List<Group>> = try {
-        val groups = mutableListOf<Group>()
+        val snapshot = groupsCollection
+            .whereArrayContains("memberIds", userId)
+            .get()
+            .await()
         
-        // Récupérer tous les groupes où l'utilisateur est membre
-        val groupsSnapshot = groupsCollection.get().await()
-        
-        for (groupDoc in groupsSnapshot.documents) {
-            val memberDoc = groupDoc.reference
-                .collection("members")
-                .document(userId)
-                .get()
-                .await()
-            
-            if (memberDoc.exists()) {
-                groupDoc.toObject(Group::class.java)?.let { groups.add(it) }
-            }
+        val groups = snapshot.documents.mapNotNull { 
+            it.toObject(Group::class.java) 
         }
         
         Result.success(groups)
@@ -146,12 +143,22 @@ class FirestoreService {
      * Ajouter un membre à un groupe
      */
     suspend fun addGroupMember(groupId: String, member: GroupMember): Result<Unit> = try {
-        groupsCollection
+        val batch = db.batch()
+        
+        // 1. Ajouter le membre dans la sous-collection
+        val memberRef = groupsCollection
             .document(groupId)
             .collection("members")
             .document(member.userId)
-            .set(member)
-            .await()
+        batch.set(memberRef, member)
+        
+        // 2. Mettre à jour le groupe (memberIds + compteur)
+        val groupRef = groupsCollection.document(groupId)
+        batch.update(groupRef, "memberIds", FieldValue.arrayUnion(member.userId))
+        batch.update(groupRef, "memberCount", FieldValue.increment(1))
+        
+        batch.commit().await()
+        
         Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
@@ -215,27 +222,20 @@ class FirestoreService {
      * Récupérer une invitation par code
      */
     suspend fun getInvitationByCode(code: String): Result<InvitationCode?> = try {
-        // Chercher dans tous les groupes (optimisable avec indexation)
-        val groupsSnapshot = groupsCollection.get().await()
+        // Optimisation : Collection Group Query
+        val snapshot = db.collectionGroup("invitations")
+            .whereEqualTo("code", code)
+            .whereEqualTo("isActive", true)
+            .get()
+            .await()
         
-        var foundInvitation: InvitationCode? = null
-        
-        for (groupDoc in groupsSnapshot.documents) {
-            val invitationsSnapshot = groupDoc.reference
-                .collection("invitations")
-                .whereEqualTo("code", code)
-                .whereEqualTo("isActive", true)
-                .get()
-                .await()
-            
-            if (!invitationsSnapshot.isEmpty) {
-                foundInvitation = invitationsSnapshot.documents.first()
-                    .toObject(InvitationCode::class.java)
-                break
-            }
+        val invitation = if (!snapshot.isEmpty) {
+            snapshot.documents.first().toObject(InvitationCode::class.java)
+        } else {
+            null
         }
         
-        Result.success(foundInvitation)
+        Result.success(invitation)
     } catch (e: Exception) {
         Result.failure(e)
     }

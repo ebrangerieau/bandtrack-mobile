@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper: Propriétaire du document utilisateur
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Helper: Membre du groupe (Via lecture du doc parent et memberIds)
+    function isGroupMember(groupId) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds.hasAny([request.auth.uid]);
+    }
+    
+    // Helper: Membre via le champ optimisé memberIds
+    function isGroupMemberOptimized(resource) {
+      return isAuthenticated() && resource.data.memberIds.hasAny([request.auth.uid]);
+    }
+
+    // USERS
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      // Permettre la lecture des infos de base utilisateur pour l'affichage (ex: nom dans les membres)
+      allow read: if isAuthenticated(); 
+    }
+
+    // GROUPS
+    match /groups/{groupId} {
+      // Lecture : Uniquement les groupes dont on est membre
+      // Nécessite que la requête filtrent avec `whereArrayContains("memberIds", userId)`
+      allow read: if isGroupMemberOptimized(resource);
+      
+      // Création : Tout utilisateur authentifié
+      allow create: if isAuthenticated();
+      
+      // Mise à jour : Membres du groupe
+      allow update: if isGroupMemberOptimized(resource);
+
+      // Sous-collection MEMBERS
+      match /members/{memberId} {
+        allow read: if isGroupMember(groupId);
+        // Seul un admin ou l'utilisateur lui-même peut écrire (simplifié ici à tout membre)
+        allow write: if isGroupMember(groupId) || request.auth.uid == memberId; 
+      }
+      
+      // Sous-collection SONGS
+      match /songs/{songId} {
+        allow read, write: if isGroupMember(groupId);
+      }
+
+      // Sous-collection SUGGESTIONS
+      match /suggestions/{suggestionId} {
+        allow read, write: if isGroupMember(groupId);
+      }
+      
+      // Sous-collection PERFORMANCES
+      match /performances/{perfId} {
+        allow read, write: if isGroupMember(groupId);
+      }
+      
+      // Sous-collection INVITATIONS (Accès direct)
+      match /invitations/{inviteId} {
+        allow read, write: if isGroupMember(groupId);
+      }
+    }
+    
+    // COLLECTION GROUP: INVITATIONS
+    // Permet de trouver une invitation par code sans connaître le groupe
+    match /{path=**}/invitations/{invitationId} {
+       allow read: if isAuthenticated();
+    }
+  }
+}

@@ -12,8 +12,9 @@ data class Group(
     val description: String = "",
     val imageUrl: String? = null,
     val createdBy: String = "", // User ID du créateur
-    val createdAt: Long = System.currentTimeMillis(),
-    val memberCount: Int = 0
+    val createdAt: Long = 0L,
+    val memberCount: Int = 0,
+    val memberIds: List<String> = emptyList() // Pour les requêtes whereArrayContains
 ) {
     companion object {
         fun empty() = Group()

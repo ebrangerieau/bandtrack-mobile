@@ -11,7 +11,7 @@ import kotlinx.coroutines.tasks.await
 /**
  * Repository pour la gestion du répertoire de morceaux
  */
-class SongRepository {
+open class SongRepository {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     /**
@@ -74,7 +74,7 @@ class SongRepository {
     /**
      * Observer les morceaux en temps réel
      */
-    fun observeGroupSongs(groupId: String): Flow<List<Song>> = callbackFlow {
+    open fun observeGroupSongs(groupId: String): Flow<List<Song>> = callbackFlow {
         val listener = db.collection("groups")
             .document(groupId)
             .collection("songs")

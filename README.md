@@ -15,12 +15,13 @@ Application mobile collaborative pour groupes de musiciens, développée en **Ko
 
 ## 🏗️ Architecture
 
-- **Frontend** : Jetpack Compose (Android)
+- **Frontend** : Jetpack Compose (Android), Material 3 Design
 - **Architecture** : MVVM (Model-View-ViewModel)
-- **Multiplateforme** : Kotlin Multiplatform (préparé pour iOS)
-- **Base locale** : Room Database
-- **Cloud** : Firebase (Auth, Firestore, FCM)
-- **Sécurité** : Authentification biométrique, EncryptedSharedPreferences
+- **Multiplateforme** : Code partagé Kotlin Multiplatform (préparé pour iOS)
+- **Données** : Firebase Firestore (Temps réel)
+- **Stockage Local** : Cache temporaire (Room Database prévu pour le mode hors-ligne complet)
+- **Cloud** : Firebase (Auth, Firestore)
+- **Sécurité** : Règles de sécurité Firebase
 
 ## 📋 Prérequis
 
@@ -140,18 +141,18 @@ Voir le fichier [LICENSE](LICENSE) pour plus de détails.
 
 Développé dans le cadre du projet BandTrack - Application collaborative pour musiciens.
 
-## 🎵 Roadmap
+## 🎵 Roadmap & Statut
 
-- [x] Phase 1 : Infrastructure et configuration
-- [ ] Phase 2 : Authentification et multi-groupes
-- [ ] Phase 3 : Fonctionnalités métier (suggestions, répertoire)
-- [ ] Phase 4 : Planification et prestations
-- [ ] Phase 5 : Synchronisation offline
-- [ ] Phase 6 : Partage P2P des médias
-- [ ] Phase 7 : Interface utilisateur complète
-- [ ] Phase 8 : Sécurité et finalisation
-- [ ] Version iOS avec Kotlin Multiplatform
+- [x] **Phase 1 : Infrastructure** (Projet KMP, Gradle)
+- [x] **Phase 2 : Authentification** (Login, Register, Multi-Groupes)
+- [x] **Phase 3 : Répertoire** (Liste, Ajout, Notes Audio, Suggestions)
+- [x] **Phase 4 : Planification** (Concerts, Répétitions, Setlists)
+- [x] **Phase 5 : UX & Améliorations** (Recherche, Tri, Stats)
+- [ ] **Phase 6 : Mode Hors Ligne** (Room Database, Synchro worker)
+- [ ] **Phase 7 : Partage P2P** (Fichiers audio lourds)
+- [ ] **Phase 8 : Version iOS** (Adapter l'UI pour iOS)
 
 ---
 
-**Note** : Ce projet est en cours de développement actif. Consultez le [task.md](C:\Users\ebrangerieau\.gemini\antigravity\brain\11fa0c1d-5800-4763-aae3-64228d9c996f\task.md) pour suivre l'avancement.
+**Note** : Ce projet est fonctionnel sur Android. La version iOS partage la logique métier mais nécessite l'implémentation de l'UI.
+Consultez le fichier `STATUS.md` pour le détail de l'avancement technique.

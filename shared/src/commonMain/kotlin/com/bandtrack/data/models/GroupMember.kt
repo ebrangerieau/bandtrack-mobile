@@ -22,13 +22,13 @@ data class GroupMember(
     val instrument: String? = null, // Instrument principal du musicien
     val joinedAt: Long = System.currentTimeMillis()
 ) {
-    fun getRole(): GroupRole = try {
+    fun roleEnum(): GroupRole = try {
         GroupRole.valueOf(role)
     } catch (e: Exception) {
         GroupRole.MEMBER
     }
 
-    fun isAdmin(): Boolean = getRole() == GroupRole.ADMIN
+    fun isAdmin(): Boolean = roleEnum() == GroupRole.ADMIN
 
     companion object {
         fun empty() = GroupMember()

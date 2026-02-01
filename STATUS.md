@@ -60,6 +60,12 @@
 - ✅ Correction de l'erreur de syntaxe dans `SongRepository.kt` (ligne 109)
 - ✅ Build réussi - APK généré avec succès
 
+### ✅ Runtime - RÉSOLU
+- ✅ Correction `PERMISSION_DENIED` sur l'écran Groupes
+- ✅ Correction conflit getters `getRole` sur `GroupMember` (renommé en `toRoleEnum`)
+- ✅ Optimisation des requêtes Firestore (ajout `memberIds` au modèle Group)
+- ✅ Création du fichier `firestore.rules` optimisé
+
 ## 📋 Prochaines Étapes Suggérées
 
 ### Phase 3.1 : Notes Audio 🎤 ✅ (Terminé 2026-02-01)
@@ -94,20 +100,18 @@
 
 **Technologies** : SearchBar, Sort Logic, Data Visualization (Basic Cards)
 
-### Option D : Tests & Documentation 📝
-**Complexité** : Faible-Moyenne  
-**Durée estimée** : 2-3h
-
-- [ ] Tests unitaires (Repositories, ViewModels)
+### Phase 6 : Tests & Documentation 📝 (Partiel)
+- [x] Mise à jour du README.md (Architecture, Roadmap à jour)
+- [x] Refactoring pour testabilité (Repository `open`)
+- [ ] Tests Unitaires (ViewModel) - *Bloqué par config Gradle*
 - [ ] Tests d'intégration
-- [ ] Documentation API
-- [ ] Guide utilisateur
-- [ ] Vidéo de démonstration
+
+**Technologies** : Markdown, JUnit
+
+
 
 ## 🎯 Objectifs à Long Terme
 
-- [ ] **Phase 6** : Partage de fichiers (partitions PDF, audio)
-- [ ] **Phase 7** : Chat de groupe
 - [ ] **Phase 8** : Intégrations externes (Spotify, YouTube)
 - [ ] **Phase 9** : Version iOS (grâce à KMP)
 - [ ] **Phase 10** : Publication sur Play Store
