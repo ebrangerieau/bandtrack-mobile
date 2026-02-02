@@ -84,6 +84,27 @@ class SuggestionsViewModel(
     }
 
     /**
+     * Mettre à jour une suggestion existante
+     */
+    fun updateSuggestion(suggestionId: String, title: String, artist: String, link: String?) {
+        viewModelScope.launch {
+            val result = suggestionRepository.updateSuggestion(
+                groupId = currentGroupId,
+                suggestionId = suggestionId,
+                title = title,
+                artist = artist,
+                link = link
+            )
+
+            if (result.isFailure) {
+                _uiState.value = SuggestionsUiState.Error(
+                    result.exceptionOrNull()?.message ?: "Erreur lors de la mise à jour"
+                )
+            }
+        }
+    }
+
+    /**
      * Voter pour une suggestion
      */
     fun toggleVote(suggestionId: String) {

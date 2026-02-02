@@ -241,6 +241,34 @@ open class SuggestionRepository(
     }
 
     /**
+     * Mettre à jour une suggestion
+     */
+    suspend fun updateSuggestion(
+        groupId: String,
+        suggestionId: String,
+        title: String,
+        artist: String,
+        link: String?
+    ): Result<Unit> = try {
+        db.collection("groups")
+            .document(groupId)
+            .collection("suggestions")
+            .document(suggestionId)
+            .update(
+                mapOf(
+                    "title" to title,
+                    "artist" to artist,
+                    "link" to link
+                )
+            )
+            .await()
+        
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
      * Marquer une suggestion comme acceptée
      */
     suspend fun acceptSuggestion(

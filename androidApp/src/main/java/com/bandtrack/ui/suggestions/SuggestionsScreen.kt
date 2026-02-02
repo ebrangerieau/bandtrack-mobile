@@ -9,6 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,6 +33,7 @@ fun SuggestionsScreen(
     )
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingSuggestion by remember { mutableStateOf<Suggestion?>(null) }
 
     LaunchedEffect(groupId) {
         viewModel.initialize(groupId, userId, userName)
@@ -76,7 +79,8 @@ fun SuggestionsScreen(
                             currentUserId = userId,
                             onVote = viewModel::toggleVote,
                             onConvert = viewModel::convertToSong,
-                            onDelete = viewModel::deleteSuggestion
+                            onDelete = viewModel::deleteSuggestion,
+                            onEdit = { editingSuggestion = it }
                         )
                     }
                 }
@@ -91,11 +95,22 @@ fun SuggestionsScreen(
     }
 
     if (showAddDialog) {
-        AddSuggestionDialog(
+        SuggestionDialog(
             onDismiss = { showAddDialog = false },
             onConfirm = { title, artist, link ->
                 viewModel.createSuggestion(title, artist, link)
                 showAddDialog = false
+            }
+        )
+    }
+
+    if (editingSuggestion != null) {
+        SuggestionDialog(
+            suggestion = editingSuggestion,
+            onDismiss = { editingSuggestion = null },
+            onConfirm = { title, artist, link ->
+                viewModel.updateSuggestion(editingSuggestion!!.id, title, artist, link)
+                editingSuggestion = null
             }
         )
     }
@@ -107,7 +122,8 @@ fun SuggestionsList(
     currentUserId: String,
     onVote: (String) -> Unit,
     onConvert: (Suggestion) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    onEdit: (Suggestion) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -120,7 +136,8 @@ fun SuggestionsList(
                 currentUserId = currentUserId,
                 onVote = { onVote(suggestion.id) },
                 onConvert = { onConvert(suggestion) },
-                onDelete = { onDelete(suggestion.id) }
+                onDelete = { onDelete(suggestion.id) },
+                onEdit = { onEdit(suggestion) }
             )
         }
     }
@@ -132,9 +149,11 @@ fun SuggestionCard(
     currentUserId: String,
     onVote: () -> Unit,
     onConvert: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    val uriHandler = LocalUriHandler.current
     val hasVoted = suggestion.hasUserVoted(currentUserId)
     val isCreator = suggestion.createdBy == currentUserId
 
@@ -187,6 +206,16 @@ fun SuggestionCard(
                     )
                     if (isCreator) {
                         DropdownMenuItem(
+                            text = { Text("Modifier") },
+                            onClick = {
+                                onEdit()
+                                showMenu = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Edit, contentDescription = null)
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Supprimer") },
                             onClick = {
                                 onDelete()
@@ -237,13 +266,35 @@ fun SuggestionCard(
             // Lien si présent
             suggestion.link?.let { link ->
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "🔗 $link",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        Icons.Default.Link,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = link,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            textDecoration = TextDecoration.Underline
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth().clickable {
+                            try {
+                                val url = if (link.startsWith("http")) link else "https://$link"
+                                uriHandler.openUri(url)
+                            } catch (e: Exception) {
+                                // Gérer l'erreur si l'URL est malformée
+                            }
+                        }
+                    )
+                }
             }
         }
     }
@@ -290,17 +341,18 @@ fun EmptySuggestionsView(onAddClick: () -> Unit) {
 }
 
 @Composable
-fun AddSuggestionDialog(
+fun SuggestionDialog(
+    suggestion: Suggestion? = null,
     onDismiss: () -> Unit,
     onConfirm: (title: String, artist: String, link: String?) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
-    var artist by remember { mutableStateOf("") }
-    var link by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(suggestion?.title ?: "") }
+    var artist by remember { mutableStateOf(suggestion?.artist ?: "") }
+    var link by remember { mutableStateOf(suggestion?.link ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nouvelle suggestion") },
+        title = { Text(if (suggestion == null) "Nouvelle suggestion" else "Modifier la suggestion") },
         text = {
             Column {
                 OutlinedTextField(
@@ -340,7 +392,7 @@ fun AddSuggestionDialog(
                 },
                 enabled = title.isNotBlank() && artist.isNotBlank()
             ) {
-                Text("Proposer")
+                Text(if (suggestion == null) "Proposer" else "Enregistrer")
             }
         },
         dismissButton = {
