@@ -61,7 +61,8 @@ fun ProfileScreen(
                     }
                 }
             )
-        }
+        },
+        containerColor = Color.Transparent
     ) { padding ->
         Column(
             modifier = Modifier

@@ -367,7 +367,8 @@ fun HomeScreen(
                         onClick = { selectedTab = 2 }
                     )
                 }
-            }
+            },
+            containerColor = Color.Transparent
         ) { padding ->
             Box(
                 modifier = Modifier

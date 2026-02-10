@@ -26,7 +26,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        containerColor = androidx.compose.ui.graphics.Color.Transparent
     ) { padding ->
         Column(
             modifier = Modifier

@@ -40,6 +40,7 @@ fun GroupSelectorScreen(
                 }
             )
         },
+        containerColor = androidx.compose.ui.graphics.Color.Transparent,
         floatingActionButton = {
             Column {
                 FloatingActionButton(
