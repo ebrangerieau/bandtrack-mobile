@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -12,6 +13,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -89,108 +93,119 @@ fun BandTrackApp(
     val isOnline by networkMonitor.isOnline.collectAsState()
 
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        when {
-            // Si pas connecté, afficher login/register
-            currentUser == null -> {
-                when (currentScreen) {
-                    Screen.Login -> {
-                        LoginScreen(
-                            onLoginSuccess = {
-                                currentScreen = Screen.GroupSelector
-                            },
-                            onNavigateToRegister = {
-                                currentScreen = Screen.Register
-                            }
-                        )
-                    }
-                    Screen.Register -> {
-                        RegisterScreen(
-                            onRegisterSuccess = {
-                                currentScreen = Screen.GroupSelector
-                            },
-                            onNavigateToLogin = {
-                                currentScreen = Screen.Login
-                            }
-                        )
-                    }
-                    else -> {}
-                }
-            }
-            // Si connecté mais pas de groupe sélectionné
-            selectedGroup == null -> {
-                GroupSelectorScreen(
-                    onGroupSelected = { group ->
-                        selectedGroup = group
-                        currentScreen = Screen.Home
-                    },
-                    onLogout = {
-                        authViewModel.signOut()
-                        selectedGroup = null
-                        currentScreen = Screen.Login
-                    },
-                    userName = currentUser?.displayName ?: "Utilisateur"
-                )
-            }
-            // Si connecté et groupe sélectionné
-            else -> {
-                when (currentScreen) {
-                    Screen.Settings -> {
-                        com.bandtrack.ui.settings.SettingsScreen(
-                            isDarkTheme = isDarkTheme,
-                            onThemeChange = onThemeChange,
-                            onNavigateBack = { currentScreen = Screen.Profile }
-                        )
-                    }
-                    Screen.Profile -> {
-                         com.bandtrack.ui.profile.ProfileScreen(
-                            onNavigateBack = { currentScreen = Screen.Home },
-                            onNavigateToSettings = { currentScreen = Screen.Settings },
-                            onLogout = {
-                                authViewModel.signOut()
-                                selectedGroup = null
-                                currentScreen = Screen.Login
-                            }
-                        )
-                    }
-                    Screen.LiveMode -> {
-                        if (livePerformanceId != null && currentUser != null) {
-                            com.bandtrack.ui.performance.LiveModeScreen(
-                                performanceId = livePerformanceId!!,
-                                groupId = selectedGroup!!.id,
-                                performanceRepository = performanceRepository,
-                                songRepository = songRepository,
-                                onExit = { 
-                                    livePerformanceId = null
-                                    currentScreen = Screen.Home 
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Image de fond
+        Image(
+            painter = painterResource(id = R.drawable.app_background),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            alpha = 0.25f // Très subtil pour ne pas gêner la lisibilité
+        )
+
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = Color.Transparent // On laisse voir l'image par transparence
+        ) {
+            when {
+                // Si pas connecté, afficher login/register
+                currentUser == null -> {
+                    when (currentScreen) {
+                        Screen.Login -> {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    currentScreen = Screen.GroupSelector
+                                },
+                                onNavigateToRegister = {
+                                    currentScreen = Screen.Register
                                 }
                             )
-                        } else {
-                            currentScreen = Screen.Home
                         }
+                        Screen.Register -> {
+                            RegisterScreen(
+                                onRegisterSuccess = {
+                                    currentScreen = Screen.GroupSelector
+                                },
+                                onNavigateToLogin = {
+                                    currentScreen = Screen.Login
+                                }
+                            )
+                        }
+                        else -> {}
                     }
-                    else -> {
-                        MainContent(
-                            group = selectedGroup!!,
-                            isOnline = isOnline,
-                            onChangeGroup = {
-                                selectedGroup = null
-                                currentScreen = Screen.GroupSelector
-                            },
-                            onNavigateToProfile = {
-                                currentScreen = Screen.Profile
-                            },
-                            onStartLiveMode = { performanceId ->
-                                livePerformanceId = performanceId
-                                currentScreen = Screen.LiveMode
-                            },
-                            songRepository = songRepository,
-                            suggestionRepository = suggestionRepository,
-                            performanceRepository = performanceRepository
-                        )
+                }
+                // Si connecté mais pas de groupe sélectionné
+                selectedGroup == null -> {
+                    GroupSelectorScreen(
+                        onGroupSelected = { group ->
+                            selectedGroup = group
+                            currentScreen = Screen.Home
+                        },
+                        onLogout = {
+                            authViewModel.signOut()
+                            selectedGroup = null
+                            currentScreen = Screen.Login
+                        },
+                        userName = currentUser?.displayName ?: "Utilisateur"
+                    )
+                }
+                // Si connecté et groupe sélectionné
+                else -> {
+                    when (currentScreen) {
+                        Screen.Settings -> {
+                            com.bandtrack.ui.settings.SettingsScreen(
+                                isDarkTheme = isDarkTheme,
+                                onThemeChange = onThemeChange,
+                                onNavigateBack = { currentScreen = Screen.Profile }
+                            )
+                        }
+                        Screen.Profile -> {
+                             com.bandtrack.ui.profile.ProfileScreen(
+                                onNavigateBack = { currentScreen = Screen.Home },
+                                onNavigateToSettings = { currentScreen = Screen.Settings },
+                                onLogout = {
+                                    authViewModel.signOut()
+                                    selectedGroup = null
+                                    currentScreen = Screen.Login
+                                }
+                            )
+                        }
+                        Screen.LiveMode -> {
+                            if (livePerformanceId != null && currentUser != null) {
+                                com.bandtrack.ui.performance.LiveModeScreen(
+                                    performanceId = livePerformanceId!!,
+                                    groupId = selectedGroup!!.id,
+                                    performanceRepository = performanceRepository,
+                                    songRepository = songRepository,
+                                    onExit = { 
+                                        livePerformanceId = null
+                                        currentScreen = Screen.Home 
+                                    }
+                                )
+                            } else {
+                                currentScreen = Screen.Home
+                            }
+                        }
+                        else -> {
+                            MainContent(
+                                group = selectedGroup!!,
+                                isOnline = isOnline,
+                                onChangeGroup = {
+                                    selectedGroup = null
+                                    currentScreen = Screen.GroupSelector
+                                },
+                                onNavigateToProfile = {
+                                    currentScreen = Screen.Profile
+                                },
+                                onStartLiveMode = { performanceId ->
+                                    livePerformanceId = performanceId
+                                    currentScreen = Screen.LiveMode
+                                },
+                                songRepository = songRepository,
+                                suggestionRepository = suggestionRepository,
+                                performanceRepository = performanceRepository
+                            )
+                        }
                     }
                 }
             }
