@@ -30,6 +30,8 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var resetEmailSent by remember { mutableStateOf(false) }
     
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
@@ -125,7 +127,23 @@ fun LoginScreen(
                 enabled = uiState !is AuthUiState.Loading
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            // Bouton Mot de passe oublié
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = { showResetDialog = true },
+                    enabled = uiState !is AuthUiState.Loading
+                ) {
+                    Text(
+                        "Mot de passe oublié ?",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Bouton de connexion
             Button(
@@ -159,6 +177,16 @@ fun LoginScreen(
                 Text("Pas encore de compte ? S'inscrire")
             }
 
+            // Confirmation envoi email de reset
+            if (resetEmailSent) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Un email de réinitialisation a été envoyé.",
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
             // Affichage des erreurs
             if (uiState is AuthUiState.Error) {
                 Spacer(modifier = Modifier.height(16.dp))
@@ -169,5 +197,51 @@ fun LoginScreen(
                 )
             }
         }
+    }
+
+    // Dialogue de réinitialisation de mot de passe
+    if (showResetDialog) {
+        var resetEmail by remember { mutableStateOf(email) }
+        
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = { Text("Réinitialiser le mot de passe") },
+            text = {
+                Column {
+                    Text(
+                        "Entrez votre adresse email pour recevoir un lien de réinitialisation.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = resetEmail,
+                        onValueChange = { resetEmail = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email
+                        )
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.sendPasswordResetEmail(resetEmail)
+                        showResetDialog = false
+                        resetEmailSent = true
+                    },
+                    enabled = resetEmail.isNotBlank()
+                ) {
+                    Text("Envoyer")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text("Annuler")
+                }
+            }
+        )
     }
 }

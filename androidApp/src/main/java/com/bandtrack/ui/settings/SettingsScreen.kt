@@ -72,7 +72,7 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("Version")
-                Text("1.0.0") // TODO: Utiliser BuildConfig.VERSION_NAME
+                Text(com.bandtrack.BuildConfig.VERSION_NAME)
             }
         }
     }

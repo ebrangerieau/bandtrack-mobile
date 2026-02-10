@@ -96,13 +96,30 @@ class AuthRepository(
     }
 
     /**
-     * Supprimer le compte
+     * Supprimer le compte et nettoyer les données Firestore
      */
     suspend fun deleteAccount(): Result<Unit> {
         val userId = currentUserId ?: return Result.failure(Exception("No user signed in"))
         
-        // TODO: Supprimer aussi toutes les données utilisateur dans Firestore
-        
-        return authService.deleteAccount()
+        try {
+            // 1. Récupérer les groupes de l'utilisateur
+            val userResult = firestoreService.getUser(userId)
+            val user = userResult.getOrNull()
+            
+            // 2. Retirer l'utilisateur de chaque groupe
+            if (user != null) {
+                for (groupId in user.groupIds) {
+                    firestoreService.removeGroupFromUser(userId, groupId)
+                }
+            }
+            
+            // 3. Supprimer le document utilisateur Firestore
+            firestoreService.deleteUser(userId)
+            
+            // 4. Supprimer le compte Firebase Auth
+            return authService.deleteAccount()
+        } catch (e: Exception) {
+            return Result.failure(e)
+        }
     }
 }

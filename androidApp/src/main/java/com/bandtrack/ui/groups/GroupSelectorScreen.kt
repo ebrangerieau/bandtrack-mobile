@@ -19,6 +19,7 @@ import com.bandtrack.data.models.Group
 fun GroupSelectorScreen(
     onGroupSelected: (Group) -> Unit,
     onLogout: () -> Unit,
+    userName: String = "Utilisateur",
     viewModel: GroupSelectorViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -95,7 +96,7 @@ fun GroupSelectorScreen(
         CreateGroupDialog(
             onDismiss = { showCreateDialog = false },
             onConfirm = { name, description ->
-                viewModel.createGroup(name, description, "User") // TODO: récupérer displayName
+                viewModel.createGroup(name, description, userName)
                 showCreateDialog = false
             }
         )
@@ -106,7 +107,7 @@ fun GroupSelectorScreen(
         JoinGroupDialog(
             onDismiss = { showJoinDialog = false },
             onConfirm = { code ->
-                viewModel.joinGroupWithCode(code, "User") // TODO: récupérer displayName
+                viewModel.joinGroupWithCode(code, userName)
                 showJoinDialog = false
             }
         )

@@ -29,7 +29,15 @@ class GroupRepository(
             memberCount = 1
         )
         
-        return firestoreService.createGroup(group, creatorUserId)
+        val result = firestoreService.createGroup(group, creatorUserId)
+        
+        // Sync user.groupIds
+        if (result.isSuccess) {
+            val groupId = result.getOrNull()!!
+            firestoreService.addGroupToUser(creatorUserId, groupId)
+        }
+        
+        return result
     }
 
     /**
@@ -144,7 +152,10 @@ class GroupRepository(
             return Result.failure(addMemberResult.exceptionOrNull()!!)
         }
         
-        // 4. Incrémenter le compteur d'utilisation
+        // 4. Mettre à jour user.groupIds
+        firestoreService.addGroupToUser(userId, invitation.groupId)
+        
+        // 5. Incrémenter le compteur d'utilisation
         firestoreService.useInvitationCode(invitation.id, invitation.groupId)
         
         return Result.success(invitation.groupId)

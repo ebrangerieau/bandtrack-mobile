@@ -73,7 +73,7 @@ service cloud.firestore {
     // COLLECTION GROUP: INVITATIONS
     // Permet de trouver une invitation par code sans connaître le groupe
     match /{path=**}/invitations/{invitationId} {
-       allow read: if isAuthenticated();
+       allow read: if isAuthenticated() && resource.data.isActive == true;
     }
   }
 }

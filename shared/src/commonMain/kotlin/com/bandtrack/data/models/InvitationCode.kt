@@ -33,8 +33,9 @@ data class InvitationCode(
          */
         fun generateCode(): String {
             val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789" // Évite les caractères ambigus
+            val random = java.security.SecureRandom()
             return (1..8)
-                .map { chars.random() }
+                .map { chars[random.nextInt(chars.length)] }
                 .joinToString("")
         }
     }

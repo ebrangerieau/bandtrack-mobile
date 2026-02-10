@@ -131,7 +131,8 @@ fun BandTrackApp(
                         authViewModel.signOut()
                         selectedGroup = null
                         currentScreen = Screen.Login
-                    }
+                    },
+                    userName = currentUser?.displayName ?: "Utilisateur"
                 )
             }
             // Si connecté et groupe sélectionné

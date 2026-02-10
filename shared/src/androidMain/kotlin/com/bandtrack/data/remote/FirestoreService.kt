@@ -44,6 +44,16 @@ class FirestoreService {
     }
 
     /**
+     * Supprimer un document utilisateur
+     */
+    suspend fun deleteUser(userId: String): Result<Unit> = try {
+        usersCollection.document(userId).delete().await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
      * Observer les changements d'un utilisateur en temps réel
      */
     fun observeUser(userId: String): Flow<User?> = callbackFlow {
@@ -131,6 +141,30 @@ class FirestoreService {
         }
         
         Result.success(groups)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
+     * Ajouter un groupId à la liste des groupes de l'utilisateur
+     */
+    suspend fun addGroupToUser(userId: String, groupId: String): Result<Unit> = try {
+        usersCollection.document(userId).update(
+            "groupIds", FieldValue.arrayUnion(groupId)
+        ).await()
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /**
+     * Retirer un groupId de la liste des groupes de l'utilisateur
+     */
+    suspend fun removeGroupFromUser(userId: String, groupId: String): Result<Unit> = try {
+        usersCollection.document(userId).update(
+            "groupIds", FieldValue.arrayRemove(groupId)
+        ).await()
+        Result.success(Unit)
     } catch (e: Exception) {
         Result.failure(e)
     }

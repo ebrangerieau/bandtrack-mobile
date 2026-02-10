@@ -2,6 +2,7 @@ package com.bandtrack.data.models
 
 import kotlinx.serialization.Serializable
 
+@Serializable
 enum class PerformanceType {
     REHEARSAL, // Répétition
     GIG,       // Concert
