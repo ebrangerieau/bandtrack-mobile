@@ -12,6 +12,7 @@ data class Suggestion(
     val groupId: String = "",
     val title: String = "",
     val artist: String = "",
+    val duration: Int = 0, // Durée en secondes
     val link: String? = null, // Lien YouTube, Spotify, etc.
     val createdBy: String = "", // User ID
     val createdByName: String = "", // Nom d'affichage

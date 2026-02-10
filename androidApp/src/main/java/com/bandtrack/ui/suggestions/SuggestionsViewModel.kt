@@ -63,12 +63,13 @@ class SuggestionsViewModel(
     /**
      * Créer une nouvelle suggestion
      */
-    fun createSuggestion(title: String, artist: String, link: String?) {
+    fun createSuggestion(title: String, artist: String, duration: Int, link: String?) {
         viewModelScope.launch {
             val result = suggestionRepository.createSuggestion(
                 groupId = currentGroupId,
                 title = title,
                 artist = artist,
+                duration = duration,
                 link = link,
                 userId = currentUserId,
                 userName = currentUserName
@@ -86,13 +87,14 @@ class SuggestionsViewModel(
     /**
      * Mettre à jour une suggestion existante
      */
-    fun updateSuggestion(suggestionId: String, title: String, artist: String, link: String?) {
+    fun updateSuggestion(suggestionId: String, title: String, artist: String, duration: Int, link: String?) {
         viewModelScope.launch {
             val result = suggestionRepository.updateSuggestion(
                 groupId = currentGroupId,
                 suggestionId = suggestionId,
                 title = title,
                 artist = artist,
+                duration = duration,
                 link = link
             )
 

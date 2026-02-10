@@ -44,6 +44,7 @@ data class Song(
                 groupId = suggestion.groupId,
                 title = suggestion.title,
                 artist = suggestion.artist,
+                duration = suggestion.duration,
                 link = suggestion.link,
                 addedBy = addedBy,
                 convertedFromSuggestionId = suggestion.id

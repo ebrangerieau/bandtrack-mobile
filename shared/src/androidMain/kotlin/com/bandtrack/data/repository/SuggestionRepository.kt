@@ -38,6 +38,7 @@ open class SuggestionRepository(
         groupId: String,
         title: String,
         artist: String,
+        duration: Int,
         link: String?,
         userId: String,
         userName: String
@@ -50,6 +51,7 @@ open class SuggestionRepository(
                 groupId = groupId,
                 title = title,
                 artist = artist,
+                duration = duration,
                 link = link,
                 createdBy = userId,
                 createdByName = userName,
@@ -86,6 +88,7 @@ open class SuggestionRepository(
                 groupId = groupId,
                 title = title,
                 artist = artist,
+                duration = duration,
                 link = link,
                 createdBy = userId,
                 createdByName = userName
@@ -262,6 +265,7 @@ open class SuggestionRepository(
         suggestionId: String,
         title: String,
         artist: String,
+        duration: Int,
         link: String?
     ): Result<Unit> = try {
         if (suggestionDao != null && pendingActionDao != null && context != null) {
@@ -271,6 +275,7 @@ open class SuggestionRepository(
                 val updated = entity.toModel().copy(
                     title = title,
                     artist = artist,
+                    duration = duration,
                     link = link
                 )
                 // 2. Update local
@@ -300,6 +305,7 @@ open class SuggestionRepository(
                     mapOf(
                         "title" to title,
                         "artist" to artist,
+                        "duration" to duration,
                         "link" to link
                     )
                 )

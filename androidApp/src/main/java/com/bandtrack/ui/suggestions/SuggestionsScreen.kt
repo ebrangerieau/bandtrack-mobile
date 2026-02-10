@@ -98,8 +98,8 @@ fun SuggestionsScreen(
     if (showAddDialog) {
         SuggestionDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { title, artist, link ->
-                viewModel.createSuggestion(title, artist, link)
+            onConfirm = { title, artist, duration, link ->
+                viewModel.createSuggestion(title, artist, duration, link)
                 showAddDialog = false
             }
         )
@@ -109,8 +109,8 @@ fun SuggestionsScreen(
         SuggestionDialog(
             suggestion = editingSuggestion,
             onDismiss = { editingSuggestion = null },
-            onConfirm = { title, artist, link ->
-                viewModel.updateSuggestion(editingSuggestion!!.id, title, artist, link)
+            onConfirm = { title, artist, duration, link ->
+                viewModel.updateSuggestion(editingSuggestion!!.id, title, artist, duration, link)
                 editingSuggestion = null
             }
         )
@@ -185,6 +185,15 @@ fun SuggestionCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (suggestion.duration > 0) {
+                        val mins = suggestion.duration / 60
+                        val secs = suggestion.duration % 60
+                        Text(
+                            text = "⏱️ ${mins}:${secs.toString().padStart(2, '0')}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 
                 IconButton(onClick = { showMenu = true }) {
@@ -345,10 +354,12 @@ fun EmptySuggestionsView(onAddClick: () -> Unit) {
 fun SuggestionDialog(
     suggestion: Suggestion? = null,
     onDismiss: () -> Unit,
-    onConfirm: (title: String, artist: String, link: String?) -> Unit
+    onConfirm: (title: String, artist: String, duration: Int, link: String?) -> Unit
 ) {
     var title by remember { mutableStateOf(suggestion?.title ?: "") }
     var artist by remember { mutableStateOf(suggestion?.artist ?: "") }
+    var durationMinutes by remember { mutableStateOf(suggestion?.let { (it.duration / 60).toString() } ?: "") }
+    var durationSeconds by remember { mutableStateOf(suggestion?.let { (it.duration % 60).toString() } ?: "") }
     var link by remember { mutableStateOf(suggestion?.link ?: "") }
 
     AlertDialog(
@@ -372,6 +383,34 @@ fun SuggestionDialog(
                     singleLine = true
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = durationMinutes,
+                        onValueChange = { durationMinutes = it.filter { c -> c.isDigit() } },
+                        label = { Text("Durée (min)") },
+                        placeholder = { Text("3") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                    OutlinedTextField(
+                        value = durationSeconds,
+                        onValueChange = { durationSeconds = it.filter { c -> c.isDigit() }.take(2) },
+                        label = { Text("sec") },
+                        placeholder = { Text("30") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = link,
                     onValueChange = { link = it },
@@ -385,9 +424,11 @@ fun SuggestionDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val totalSeconds = (durationMinutes.toIntOrNull() ?: 0) * 60 + (durationSeconds.toIntOrNull() ?: 0)
                     onConfirm(
                         title,
                         artist,
+                        totalSeconds,
                         link.ifBlank { null }
                     )
                 },

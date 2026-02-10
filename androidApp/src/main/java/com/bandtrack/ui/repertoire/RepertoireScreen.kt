@@ -160,6 +160,7 @@ fun RepertoireScreen(
                                 onMasteryChange = viewModel::updateMyMasteryLevel,
                                 onUpdatePersonalConfig = viewModel::updatePersonalConfig,
                                 onUpdatePersonalNotes = viewModel::updatePersonalNotes,
+                                onUpdateSong = viewModel::updateSong,
                                 onNavigateToAudioNotes = onNavigateToAudioNotes,
                                 onDelete = viewModel::deleteSong
                             )
@@ -179,10 +180,11 @@ fun RepertoireScreen(
     if (showAddDialog) {
         AddSongDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { title, artist, structure, key, tempo, notes, link ->
+            onConfirm = { title, artist, duration, structure, key, tempo, notes, link ->
                 viewModel.createSong(
                     title = title,
                     artist = artist,
+                    duration = duration,
                     structure = structure,
                     key = key,
                     tempo = tempo,
@@ -209,6 +211,7 @@ fun SongsList(
     onMasteryChange: (String, Int) -> Unit,
     onUpdatePersonalConfig: (String, String) -> Unit,
     onUpdatePersonalNotes: (String, String) -> Unit,
+    onUpdateSong: (String, Map<String, Any>) -> Unit,
     onNavigateToAudioNotes: (String) -> Unit,
     onDelete: (String) -> Unit
 ) {
@@ -224,6 +227,7 @@ fun SongsList(
                 onMasteryChange = { level -> onMasteryChange(song.id, level) },
                 onUpdatePersonalConfig = { config -> onUpdatePersonalConfig(song.id, config) },
                 onUpdatePersonalNotes = { notes -> onUpdatePersonalNotes(song.id, notes) },
+                onUpdateSong = { updates -> onUpdateSong(song.id, updates) },
                 onNavigateToAudioNotes = { onNavigateToAudioNotes(song.id) },
                 onDelete = { onDelete(song.id) }
             )
@@ -238,6 +242,7 @@ fun SongCard(
     onMasteryChange: (Int) -> Unit,
     onUpdatePersonalConfig: (String) -> Unit,
     onUpdatePersonalNotes: (String) -> Unit,
+    onUpdateSong: (Map<String, Any>) -> Unit,
     onNavigateToAudioNotes: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -299,6 +304,16 @@ fun SongCard(
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    if (song.duration > 0) {
+                        val mins = song.duration / 60
+                        val secs = song.duration % 60
+                        Text(
+                            text = "⏱️ ${mins}:${secs.toString().padStart(2, '0')}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -421,6 +436,7 @@ fun SongCard(
             currentUserId = currentUserId,
             onUpdatePersonalConfig = onUpdatePersonalConfig,
             onUpdatePersonalNotes = onUpdatePersonalNotes,
+            onUpdateSong = onUpdateSong,
             onDismiss = { showDetailsDialog = false }
         )
     }
@@ -486,6 +502,7 @@ fun AddSongDialog(
     onConfirm: (
         title: String,
         artist: String,
+        duration: Int,
         structure: String,
         key: String?,
         tempo: Int?,
@@ -495,6 +512,8 @@ fun AddSongDialog(
 ) {
     var title by remember { mutableStateOf("") }
     var artist by remember { mutableStateOf("") }
+    var durationMinutes by remember { mutableStateOf("") }
+    var durationSeconds by remember { mutableStateOf("") }
     var structure by remember { mutableStateOf("") }
     var key by remember { mutableStateOf("") }
     var tempo by remember { mutableStateOf("") }
@@ -524,6 +543,36 @@ fun AddSongDialog(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = durationMinutes,
+                            onValueChange = { durationMinutes = it.filter { c -> c.isDigit() } },
+                            label = { Text("Durée (min)") },
+                            placeholder = { Text("3") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
+                        )
+                        OutlinedTextField(
+                            value = durationSeconds,
+                            onValueChange = { durationSeconds = it.filter { c -> c.isDigit() }.take(2) },
+                            label = { Text("sec") },
+                            placeholder = { Text("30") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            )
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                 }
                 item {
@@ -586,9 +635,11 @@ fun AddSongDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    val totalSeconds = (durationMinutes.toIntOrNull() ?: 0) * 60 + (durationSeconds.toIntOrNull() ?: 0)
                     onConfirm(
                         title,
                         artist,
+                        totalSeconds,
                         structure,
                         key.ifBlank { null },
                         tempo.toIntOrNull(),
@@ -615,32 +666,101 @@ fun SongDetailsDialog(
     currentUserId: String,
     onUpdatePersonalConfig: (String) -> Unit,
     onUpdatePersonalNotes: (String) -> Unit,
+    onUpdateSong: (Map<String, Any>) -> Unit,
     onDismiss: () -> Unit
 ) {
+    var title by remember { mutableStateOf(song.title) }
+    var artist by remember { mutableStateOf(song.artist) }
+    var durationMinutes by remember { mutableStateOf((song.duration / 60).toString()) }
+    var durationSeconds by remember { mutableStateOf((song.duration % 60).toString()) }
+    var key by remember { mutableStateOf(song.key ?: "") }
+    var tempo by remember { mutableStateOf(song.tempo?.toString() ?: "") }
+    
     var personalConfig by remember { mutableStateOf(song.memberInstrumentConfigs[currentUserId] ?: "") }
     var personalNotes by remember { mutableStateOf(song.memberPersonalNotes[currentUserId] ?: "") }
-    var hasChanges by remember(personalConfig, personalNotes) {
-        mutableStateOf(
-            personalConfig != (song.memberInstrumentConfigs[currentUserId] ?: "") ||
-            personalNotes != (song.memberPersonalNotes[currentUserId] ?: "")
-        )
+    
+    val hasChanges = remember(title, artist, durationMinutes, durationSeconds, key, tempo, personalConfig, personalNotes) {
+        title != song.title ||
+        artist != song.artist ||
+        durationMinutes.toIntOrNull() != (song.duration / 60) ||
+        durationSeconds.toIntOrNull() != (song.duration % 60) ||
+        key != (song.key ?: "") ||
+        tempo != (song.tempo?.toString() ?: "") ||
+        personalConfig != (song.memberInstrumentConfigs[currentUserId] ?: "") ||
+        personalNotes != (song.memberPersonalNotes[currentUserId] ?: "")
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(song.title) },
+        title = { 
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Titre") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
-                // Infos générales (Lecture seule)
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    DetailRow("Artiste", song.artist)
-                    if (song.structure.isNotBlank()) DetailRow("Structure", song.structure)
-                    song.key?.let { DetailRow("Tonalité (Globale)", it) }
-                    song.tempo?.let { DetailRow("Tempo", "$it BPM") }
-                    DetailRow("Maîtrise Groupe", String.format("%.1f/10", song.getAverageMasteryLevel()))
+                OutlinedTextField(
+                    value = artist,
+                    onValueChange = { artist = it },
+                    label = { Text("Artiste") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = durationMinutes,
+                        onValueChange = { durationMinutes = it.filter { c -> c.isDigit() } },
+                        label = { Text("Durée (min)") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                    OutlinedTextField(
+                        value = durationSeconds,
+                        onValueChange = { durationSeconds = it.filter { c -> c.isDigit() }.take(2) },
+                        label = { Text("sec") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = key,
+                        onValueChange = { key = it },
+                        label = { Text("Tonalité") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
+                        value = tempo,
+                        onValueChange = { tempo = it.filter { c -> c.isDigit() } },
+                        label = { Text("BPM") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        )
+                    )
                 }
                 
                 HorizontalDivider()
@@ -676,8 +796,25 @@ fun SongDetailsDialog(
             Button(
                 onClick = {
                     if (hasChanges) {
-                        onUpdatePersonalConfig(personalConfig)
-                        onUpdatePersonalNotes(personalNotes)
+                        // Mise à jour de la config perso
+                        if (personalConfig != (song.memberInstrumentConfigs[currentUserId] ?: "") ||
+                            personalNotes != (song.memberPersonalNotes[currentUserId] ?: "")) {
+                            onUpdatePersonalConfig(personalConfig)
+                            onUpdatePersonalNotes(personalNotes)
+                        }
+                        
+                        // Mise à jour des infos globales
+                        val totalSeconds = (durationMinutes.toIntOrNull() ?: 0) * 60 + (durationSeconds.toIntOrNull() ?: 0)
+                        val updates = mutableMapOf<String, Any>()
+                        if (title != song.title) updates["title"] = title
+                        if (artist != song.artist) updates["artist"] = artist
+                        if (totalSeconds != song.duration) updates["duration"] = totalSeconds
+                        if (key != (song.key ?: "")) updates["key"] = key
+                        if (tempo != (song.tempo?.toString() ?: "")) updates["tempo"] = tempo.toIntOrNull() ?: 0
+                        
+                        if (updates.isNotEmpty()) {
+                            onUpdateSong(updates)
+                        }
                     }
                     onDismiss()
                 }
