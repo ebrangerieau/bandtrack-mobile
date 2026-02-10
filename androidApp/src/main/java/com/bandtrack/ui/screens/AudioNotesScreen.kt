@@ -275,7 +275,7 @@ private fun AudioNoteItem(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = formatDuration(note.duration * 1000L),
+                    text = formatDuration(note.duration.toLong() * 1000L),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -1,8 +1,6 @@
 package com.bandtrack.data.repository
 
 import android.content.Context
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkManager
 import com.bandtrack.data.local.PendingActionDao
 import com.bandtrack.data.local.PendingActionEntity
 import com.bandtrack.data.local.PerformanceDao
@@ -142,19 +140,47 @@ class PerformanceRepository(
         performanceId: String, 
         updates: Map<String, Any>
     ): Result<Unit> = try {
-        // Note: Partial updates are complex offline. 
-        // For now, we delegate to online if possible, or we would need to fetch full object, apply update, and save.
-        // Simplified approach: Direct Firestore update (Online reliance for edits for now, pending full V2)
-        // TODO: Implement full offline update support by reconstructing object
-        
-        db.collection("groups")
-            .document(groupId)
-            .collection("performances")
-            .document(performanceId)
-            .update(updates)
-            .await()
-        
-        Result.success(Unit)
+        if (performanceDao != null && pendingActionDao != null && context != null) {
+            // Mode Offline-First : fetch local, apply updates, save + queue
+            val entity = performanceDao.getPerformanceById(performanceId)
+            if (entity != null) {
+                val current = entity.toModel()
+                // Appliquer les updates connus
+                var updated = current
+                updates.forEach { (key, value) ->
+                    updated = when (key) {
+                        "title" -> updated.copy(title = value as String)
+                        "location" -> updated.copy(location = value as String)
+                        "notes" -> updated.copy(notes = value as String)
+                        "date" -> updated.copy(date = value as Long)
+                        "durationMinutes" -> updated.copy(durationMinutes = (value as Number).toInt())
+                        else -> updated
+                    }
+                }
+                performanceDao.insertPerformance(updated.toEntity())
+                
+                val action = PendingActionEntity(
+                    actionType = "UPDATE",
+                    entityType = "PERFORMANCE",
+                    entityId = performanceId,
+                    parentId = groupId,
+                    payload = Json.encodeToString(updated),
+                    createdAt = System.currentTimeMillis()
+                )
+                pendingActionDao.insert(action)
+                enqueueSync()
+            }
+            Result.success(Unit)
+        } else {
+            // Fallback Online
+            db.collection("groups")
+                .document(groupId)
+                .collection("performances")
+                .document(performanceId)
+                .update(updates)
+                .await()
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -243,9 +269,7 @@ class PerformanceRepository(
 
     private fun enqueueSync() {
         context?.let { ctx ->
-            val workRequest = OneTimeWorkRequest.Builder(SyncWorker::class.java)
-                .build()
-            WorkManager.getInstance(ctx).enqueue(workRequest)
+            SyncWorker.enqueueOneTimeSync(ctx)
         }
     }
 }

@@ -1,6 +1,6 @@
 # 📊 État du Projet BandTrack Mobile
 
-**Dernière mise à jour** : 2026-02-01
+**Dernière mise à jour** : 2026-02-10
 
 ## ✅ Phases Complétées
 
@@ -73,6 +73,10 @@
 - ✅ **Implémentation Paramètres** (Gestion Thème Sombre/Clair)
 - ✅ **Notifications Push** (Service Firebase, Permissions, Canal de notification)
 
+- ✅ **Mode Hors-Ligne Complet** (Room Database, SyncWorker, NetworkMonitor)
+- ✅ **Bandeau offline** animé dans l'UI avec détection réseau temps réel
+- ✅ **Synchronisation périodique** (WorkManager, contraintes réseau)
+
 ## 📋 Prochaines Étapes Suggérées
 
 ### Phase 3.1 : Notes Audio 🎤 ✅ (Terminé 2026-02-01)
@@ -118,13 +122,14 @@
 
 
 
-### Phase 7 : Mode Hors Ligne & Synchronisation 📡
-- [ ] **Persistance Locale** (Room Database)
-- [ ] **Cache** pour les données Firestore (Groupes, Chansons, Events)
-- [ ] **Synchronisation** (Worker Manager pour l'upload différé)
-- [ ] **Gestion des conflits** simple
+### Phase 7 : Mode Hors Ligne & Synchronisation 📡 ✅ (Terminé 2026-02-10)
+- [x] **Persistance Locale** (Room Database v6 — 4 entités)
+- [x] **Cache** pour les données Firestore (Songs, Suggestions, Performances)
+- [x] **Synchronisation** (SyncWorker avec contraintes réseau + périodique 15min)
+- [x] **Détection réseau** (NetworkMonitor + bandeau UI animé)
+- [x] **Gestion des conflits** simple (last-write-wins)
 
-**Technologies** : Room, WorkManager, SQLDelight (optionnel pour KMP)
+**Technologies** : Room, WorkManager, ConnectivityManager, StateFlow
 
 ## 🎯 Objectifs à Long Terme
 
@@ -135,12 +140,14 @@
 
 ## 📊 Métriques du Projet
 
-- **Fichiers Kotlin** : ~28
+- **Fichiers Kotlin** : ~30
 - **Modèles de données** : 6 (User, Group, InvitationCode, Suggestion, Song, AudioNote)
-- **Repositories** : 5 (Auth, Group, Suggestion, Song, AudioNote)
+- **Repositories** : 5 (Auth, Group, Suggestion, Song, AudioNote) + Performance
 - **ViewModels** : 5 (Auth, Group, Suggestions, Repertoire, AudioNote)
-- **Écrans UI** : 6 (Login, Register, Group, Suggestions, Repertoire, AudioNotes)
-- **Lignes de code** : ~3500+
+- **Écrans UI** : 6+ (Login, Register, Group, Suggestions, Repertoire, AudioNotes, Performance, Profile, Settings)
+- **Entités Room** : 4 (Song, Suggestion, Performance, PendingAction)
+- **Workers** : 1 (SyncWorker — OneTime + Periodic)
+- **Lignes de code** : ~4500+
 
 ## 🔒 Sécurité
 
@@ -171,7 +178,7 @@
 - [x] **Phase 4** : Planification (Events)
 - [x] **Phase 5** : UX (Tri, Recherche)
 - [x] **Phase 6** : Tests & Docs (Partiel)
-- [ ] **Phase 7** : Mode Hors Ligne (Room)
+- [x] **Phase 7** : Mode Hors Ligne (Room + SyncWorker + NetworkMonitor)
 - [ ] **Phase 8** : Partage P2P
 - [ ] **Phase 9** : Version iOS
 

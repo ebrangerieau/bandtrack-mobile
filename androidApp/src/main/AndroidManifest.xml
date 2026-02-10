@@ -27,6 +27,10 @@
     <!-- Permission Notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     
+    <!-- Permissions Foreground Service (Android 14) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    
     <!-- Permission Caméra (pour QR Code) -->
     <uses-permission android:name="android.permission.CAMERA" />
     

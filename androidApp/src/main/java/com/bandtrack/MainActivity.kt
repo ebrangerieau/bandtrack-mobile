@@ -3,6 +3,8 @@ package com.bandtrack
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bandtrack.data.models.Group
@@ -26,9 +29,12 @@ import com.bandtrack.ui.theme.BandTrackTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Planifier la synchronisation périodique
+        com.bandtrack.workers.SyncWorker.enqueuePeriodicSync(this)
+        
         setContent {
-            var isDarkTheme by remember { mutableStateOf(false) } // Default light, or system check
-            // Use system default initially
+            var isDarkTheme by remember { mutableStateOf(false) }
             val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
             LaunchedEffect(Unit) { isDarkTheme = systemDark }
 
@@ -77,6 +83,10 @@ fun BandTrackApp(
             database.pendingActionDao()
         ) 
     }
+    
+    // Moniteur réseau
+    val networkMonitor = remember { com.bandtrack.data.network.NetworkMonitor(context) }
+    val isOnline by networkMonitor.isOnline.collectAsState()
 
 
     Surface(
@@ -162,8 +172,9 @@ fun BandTrackApp(
                         }
                     }
                     else -> {
-                        HomeScreen(
+                        MainContent(
                             group = selectedGroup!!,
+                            isOnline = isOnline,
                             onChangeGroup = {
                                 selectedGroup = null
                                 currentScreen = Screen.GroupSelector
@@ -194,6 +205,61 @@ enum class Screen {
     Profile,
     Settings,
     LiveMode
+}
+
+@Composable
+fun MainContent(
+    group: Group,
+    isOnline: Boolean,
+    onChangeGroup: () -> Unit,
+    onNavigateToProfile: () -> Unit,
+    onStartLiveMode: (String) -> Unit,
+    songRepository: com.bandtrack.data.repository.SongRepository,
+    suggestionRepository: com.bandtrack.data.repository.SuggestionRepository,
+    performanceRepository: com.bandtrack.data.repository.PerformanceRepository
+) {
+    // Delegate to HomeScreen with offline banner
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Bandeau Mode Hors-Ligne
+        AnimatedVisibility(
+            visible = !isOnline,
+            enter = expandVertically() + fadeIn(),
+            exit = shrinkVertically() + fadeOut()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Default.WifiOff,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Mode hors-ligne — les modifications seront synchronisées au retour du réseau",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+        
+        HomeScreen(
+            group = group,
+            onChangeGroup = onChangeGroup,
+            onNavigateToProfile = onNavigateToProfile,
+            onStartLiveMode = onStartLiveMode,
+            songRepository = songRepository,
+            suggestionRepository = suggestionRepository,
+            performanceRepository = performanceRepository
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

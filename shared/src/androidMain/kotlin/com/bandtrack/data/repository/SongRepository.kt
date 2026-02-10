@@ -11,22 +11,16 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-/**
- * Repository pour la gestion du répertoire de morceaux
- */
-import androidx.work.OneTimeWorkRequest
-import androidx.work.WorkManager
 import com.bandtrack.data.local.PendingActionDao
 import com.bandtrack.data.local.PendingActionEntity
 import com.bandtrack.workers.SyncWorker
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /**
  * Repository pour la gestion du répertoire de morceaux
+ * Offline-First implementation
  */
 open class SongRepository(
     private val context: android.content.Context? = null,
@@ -233,21 +227,44 @@ open class SongRepository(
     ): Result<Unit> = try {
         require(level in 0..10) { "Le niveau doit être entre 0 et 10" }
         
-        val docRef = db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-        
-        db.runTransaction { transaction ->
-            val snapshot = transaction.get(docRef)
-            val song = snapshot.toObject(Song::class.java)
-                ?: throw Exception("Song not found")
+        if (songDao != null && pendingActionDao != null && context != null) {
+            // Mode Offline-First
+            val entity = songDao.getSongById(songId)
+            if (entity != null) {
+                val song = entity.toModel()
+                val updated = song.updateMasteryLevel(userId, level)
+                songDao.insertSong(updated.toEntity())
+                
+                val action = PendingActionEntity(
+                    actionType = "UPDATE",
+                    entityType = "SONG",
+                    entityId = songId,
+                    parentId = groupId,
+                    payload = Json.encodeToString(updated),
+                    createdAt = System.currentTimeMillis()
+                )
+                pendingActionDao.insert(action)
+                enqueueSync()
+            }
+            Result.success(Unit)
+        } else {
+            // Fallback Online (Transaction Firestore)
+            val docRef = db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
             
-            val updated = song.updateMasteryLevel(userId, level)
-            transaction.set(docRef, updated)
-        }.await()
-        
-        Result.success(Unit)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(docRef)
+                val song = snapshot.toObject(Song::class.java)
+                    ?: throw Exception("Song not found")
+                
+                val updated = song.updateMasteryLevel(userId, level)
+                transaction.set(docRef, updated)
+            }.await()
+            
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -261,13 +278,36 @@ open class SongRepository(
         userId: String,
         config: String
     ): Result<Unit> = try {
-        db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-            .update("memberInstrumentConfigs.$userId", config)
-            .await()
-        Result.success(Unit)
+        if (songDao != null && pendingActionDao != null && context != null) {
+            val entity = songDao.getSongById(songId)
+            if (entity != null) {
+                val song = entity.toModel()
+                val updatedConfigs = song.memberInstrumentConfigs.toMutableMap()
+                updatedConfigs[userId] = config
+                val updated = song.copy(memberInstrumentConfigs = updatedConfigs)
+                songDao.insertSong(updated.toEntity())
+                
+                val action = PendingActionEntity(
+                    actionType = "UPDATE",
+                    entityType = "SONG",
+                    entityId = songId,
+                    parentId = groupId,
+                    payload = Json.encodeToString(updated),
+                    createdAt = System.currentTimeMillis()
+                )
+                pendingActionDao.insert(action)
+                enqueueSync()
+            }
+            Result.success(Unit)
+        } else {
+            db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
+                .update("memberInstrumentConfigs.$userId", config)
+                .await()
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -281,13 +321,36 @@ open class SongRepository(
         userId: String,
         notes: String
     ): Result<Unit> = try {
-        db.collection("groups")
-            .document(groupId)
-            .collection("songs")
-            .document(songId)
-            .update("memberPersonalNotes.$userId", notes)
-            .await()
-        Result.success(Unit)
+        if (songDao != null && pendingActionDao != null && context != null) {
+            val entity = songDao.getSongById(songId)
+            if (entity != null) {
+                val song = entity.toModel()
+                val updatedNotes = song.memberPersonalNotes.toMutableMap()
+                updatedNotes[userId] = notes
+                val updated = song.copy(memberPersonalNotes = updatedNotes)
+                songDao.insertSong(updated.toEntity())
+                
+                val action = PendingActionEntity(
+                    actionType = "UPDATE",
+                    entityType = "SONG",
+                    entityId = songId,
+                    parentId = groupId,
+                    payload = Json.encodeToString(updated),
+                    createdAt = System.currentTimeMillis()
+                )
+                pendingActionDao.insert(action)
+                enqueueSync()
+            }
+            Result.success(Unit)
+        } else {
+            db.collection("groups")
+                .document(groupId)
+                .collection("songs")
+                .document(songId)
+                .update("memberPersonalNotes.$userId", notes)
+                .await()
+            Result.success(Unit)
+        }
     } catch (e: Exception) {
         Result.failure(e)
     }
@@ -390,9 +453,7 @@ open class SongRepository(
 
     private fun enqueueSync() {
         context?.let { ctx ->
-            val workRequest = OneTimeWorkRequest.Builder(SyncWorker::class.java)
-                .build()
-            WorkManager.getInstance(ctx).enqueue(workRequest)
+            SyncWorker.enqueueOneTimeSync(ctx)
         }
     }
 }
