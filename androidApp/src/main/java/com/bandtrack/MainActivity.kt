@@ -99,8 +99,7 @@ fun BandTrackApp(
             painter = painterResource(id = R.drawable.app_background),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop,
-            alpha = 0.25f // Très subtil pour ne pas gêner la lisibilité
+            contentScale = ContentScale.Crop
         )
 
         Surface(
