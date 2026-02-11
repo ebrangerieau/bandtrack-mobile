@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.\\\\gradlew.bat:*)",
+      "Bash(cmd /c \"gradlew.bat :androidApp:assembleRelease\":*)",
+      "Bash(cmd /c \"cd /d D:\\\\developpement\\\\bandtrack-mobile && gradlew.bat :androidApp:assembleRelease\")",
+      "Bash(D:/developpement/bandtrack-mobile/gradlew.bat :androidApp:assembleRelease)",
+      "Bash(D:/developpement/bandtrack-mobile/gradlew.bat:*)",
+      "Bash(tasklist:*)",
+      "Bash(cmd /c:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
